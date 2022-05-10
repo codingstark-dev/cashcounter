@@ -12,6 +12,7 @@ class Home extends StatelessWidget {
       length: 3,
       initialIndex: 0,
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: PreferredSize(
           preferredSize: Size(100, 50),
           child: AppBar(
