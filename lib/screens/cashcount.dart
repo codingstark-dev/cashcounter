@@ -1,5 +1,8 @@
 import 'dart:ui';
 
+import 'package:cashcounter/screens/authscreen/login.dart';
+import 'package:cashcounter/widgets/setting.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:keyboard_attachable/keyboard_attachable.dart';
@@ -11,9 +14,62 @@ class CashCounter extends StatefulWidget {
   State<CashCounter> createState() => _CashCounterState();
 }
 
+enum Menu { itemOne, itemTwo, itemThree, itemFour }
+
 class _CashCounterState extends State<CashCounter> {
   var payerString = "<--- Enter The Amount Tally Payer";
   var calNum = 0;
+
+  final List<String> items = [
+    'Item1',
+    'Item2',
+    'Item3',
+    'Item4',
+  ];
+  String? selectedValue;
+
+  late String _selectedMenu;
+
+  List<DropdownMenuItem<String>> _addDividersAfterItems(List<String> items) {
+    List<DropdownMenuItem<String>> _menuItems = [];
+    for (var item in items) {
+      _menuItems.addAll(
+        [
+          DropdownMenuItem<String>(
+            value: item,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                item,
+                style: const TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          //If it's last item, we will not add Divider after it.
+          if (item != items.last)
+            const DropdownMenuItem<String>(
+              enabled: false,
+              child: Divider(),
+            ),
+        ],
+      );
+    }
+    return _menuItems;
+  }
+
+  List<int> _getDividersIndexes() {
+    List<int> _dividersIndexes = [];
+    for (var i = 0; i < (items.length * 2) - 1; i++) {
+      //Dividers indexes will be the odd indexes
+      if (i.isOdd) {
+        _dividersIndexes.add(i);
+      }
+    }
+    return _dividersIndexes;
+  }
+
   List listNotes = [
     "2000",
     "500",
@@ -103,7 +159,7 @@ class _CashCounterState extends State<CashCounter> {
       ),
       body: FooterLayout(
         footer: SizedBox(
-          height: 100,
+          height: 150,
           child: Column(
             children: [
               const SizedBox(
@@ -123,45 +179,177 @@ class _CashCounterState extends State<CashCounter> {
                         iconSize: 20,
                         color: Colors.white,
                       )),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-                    child: Container(
-                        padding: const EdgeInsets.only(
-                            left: 30, right: 30, bottom: 8, top: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blue, width: 1),
-                          color: Colors.white,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(16.0)),
-                        ),
-                        child: const Text("1 Notes")),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 5, right: 5),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(16.0)),
+                        child: Container(
+                            padding: const EdgeInsets.only(
+                                left: 30, right: 30, bottom: 8, top: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blue, width: 1),
+                              color: Colors.white,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(16.0)),
+                            ),
+                            child: const Center(child: Text("1 Notes"))),
+                      ),
+                    ),
                   ),
-                  ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-                    child: Container(
-                        padding: const EdgeInsets.only(
-                            left: 30, right: 30, bottom: 8, top: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.blue, width: 1),
-                          color: Colors.white,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(16.0)),
-                        ),
-                        child: const Text("1 Notes")),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 5, right: 5),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(16.0)),
+                        child: Container(
+                            padding: const EdgeInsets.only(
+                                left: 30, right: 30, bottom: 8, top: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blue, width: 1),
+                              color: Colors.white,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(16.0)),
+                            ),
+                            child: const Center(child: Text("1 Notes"))),
+                      ),
+                    ),
                   ),
                   Container(
                       height: 35,
                       decoration: const BoxDecoration(
                           shape: BoxShape.circle, color: Colors.blue),
+                      child: PopupMenuButton<Menu>(
+                          iconSize: 20,
+                          icon: const Icon(Icons.menu),
+                          // Callback that sets the selected popup menu item.
+                          onSelected: (Menu item) {
+                            setState(() {
+                              _selectedMenu = item.name;
+                            });
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<Menu>>[
+                                PopupMenuItem<Menu>(
+                                  value: Menu.itemOne,
+                                  child: Row(
+                                    children: const [
+                                      Icon(
+                                        Icons.picture_as_pdf,
+                                        color: Colors.red,
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Text('PDF Receipt'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<Menu>(
+                                  value: Menu.itemTwo,
+                                  child: Row(
+                                    children: const [
+                                      Icon(
+                                        Icons.whatsapp,
+                                        color: Colors.green,
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Text('Share to watsapp'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<Menu>(
+                                  value: Menu.itemTwo,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.copy,
+                                        color: Colors.blue[200],
+                                      ),
+                                      const SizedBox(
+                                        width: 10,
+                                      ),
+                                      const Text('Copy Details'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<Menu>(
+                                  value: Menu.itemTwo,
+                                  child: Row(
+                                    children: const [
+                                      Icon(
+                                        Icons.stars,
+                                        color: Color.fromARGB(255, 255, 11, 92),
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Text('Give 5 Star'),
+                                    ],
+                                  ),
+                                ),
+                                PopupMenuItem<Menu>(
+                                  onTap: () {
+                                    Future.delayed(const Duration(seconds: 0),
+                                        () => newMethod(context));
+                                  },
+                                  value: Menu.itemTwo,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.settings,
+                                        color: Colors.blue[200],
+                                      ),
+                                      const SizedBox(
+                                        width: 10,
+                                      ),
+                                      const Text('Settings'),
+                                    ],
+                                  ),
+                                ),
+                              ])),
+                  Container(
+                      height: 35,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle, color: Colors.blue),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          // create the alert dialog
+                          // showDialog(
+                          //   context: context,
+                          //   builder: (BuildContext context) {
+                          //     return AlertDialog(
+                          //       title: const Text('Alert Dialog Title'),
+                          //       content: Text(
+                          //         'This is an alert dialog. You can use this to display information to the user.',
+                          //       ),
+                          //       actions: <Widget>[
+                          //         ElevatedButton(
+                          //           child: const Text('DISMISS'),
+                          //           onPressed: () {
+                          //             Navigator.of(context).pop();
+                          //           },
+                          //         ),
+                          //       ],
+                          //     );
+                          //   },
+                          // );
+
+                          // Navigator.of(context).push(MaterialPageRoute(
+                          //   builder: (context) => const SignInPage(),
+                          // ));
+                        },
                         icon: const Icon(Icons.menu),
                         iconSize: 20,
                         color: Colors.white,
                       )),
                 ],
               ),
-              Divider(),
+              const Divider(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -175,7 +363,64 @@ class _CashCounterState extends State<CashCounter> {
                         iconSize: 20,
                         color: Colors.white,
                       )),
-                  Text("Zero")
+                  const Expanded(child: Text("Zero"))
+                ],
+              ),
+              const Divider(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 5, right: 5),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(16.0)),
+                        child: Container(
+                            padding: const EdgeInsets.only(
+                                left: 30, right: 30, bottom: 8, top: 8),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.blue, width: 1),
+                              color: Colors.white,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(16.0)),
+                            ),
+                            child: const Center(child: Text("1 Notes"))),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(16.0)),
+                      child: Container(
+                          padding: const EdgeInsets.only(
+                              left: 30, right: 30, bottom: 8, top: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.blue, width: 1),
+                            color: Colors.white,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(16.0)),
+                          ),
+                          child: const Center(child: Text("1 Notes"))),
+                    ),
+                  ),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(16.0)),
+                      child: Container(
+                          padding: const EdgeInsets.only(
+                              left: 30, right: 30, bottom: 8, top: 8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.blue, width: 1),
+                            color: Colors.white,
+                            borderRadius:
+                                const BorderRadius.all(Radius.circular(16.0)),
+                          ),
+                          child: const Center(child: Text("1 Notes"))),
+                    ),
+                  ),
                 ],
               )
             ],
@@ -387,6 +632,114 @@ class _CashCounterState extends State<CashCounter> {
             ),
           ]),
         ),
+      ),
+    );
+  }
+
+  Future<dynamic> newMethod(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('AlertDialog Title'),
+        content: Container(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                  labelText: 'Shop / Company / Your Name',
+                  hintText: 'Enter The Amount',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Address/Bank info',
+                        hintText: 'Enter The Amount',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: 'Mobile Number',
+                        hintText: 'Enter The Amount',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              const Center(
+                  child: Text(
+                "Personal info is display at bottom of PDF.",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              )),
+              const Divider(
+                thickness: 1,
+                color: Colors.black,
+              ),
+              Expanded(
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 4.0,
+                  ),
+                  itemCount: listNotes.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return CheckboxListTile(
+                      value: true,
+                      onChanged: (value) {},
+                      title: Text(listNotes[index]),
+                    );
+                  },
+                ),
+              ),
+              Expanded(
+                child: GridView.count(
+                    crossAxisCount: 2,
+                    childAspectRatio: 4.0,
+                    children: List.generate(
+                      listNotes.length,
+                      (index) => CheckboxListTile(
+                        value: true,
+                        onChanged: (value) {},
+                        title: Text(listNotes[index]),
+                      ),
+                    ).toList()),
+              )
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          //create textfield box
+        ],
       ),
     );
   }
