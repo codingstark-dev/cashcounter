@@ -1,7 +1,11 @@
+import 'package:cashcounter/model/firestore_model.dart';
+import 'package:cashcounter/provider/auth_provider.dart';
+import 'package:cashcounter/provider/firestore_provider.dart';
 import 'package:cashcounter/screens/authscreen/login.dart';
 import 'package:cashcounter/screens/home.dart';
 import 'package:cashcounter/service/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -37,85 +41,99 @@ class _SignUpPageState extends State<SignUpPage> {
   AuthClass authClass = AuthClass();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          color: Colors.black,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Sign Up",
-                style: TextStyle(
-                  fontSize: 35,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              buttonItem("assets/logo/google.svg", "Continue with Google", 25,
-                  () async {
-                await authClass.googleSignIn(context);
-              }),
-              const SizedBox(
-                height: 10,
-              ),
-              const Text(
-                "Or",
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              textItem("Email", _emailController, false),
-              const SizedBox(
-                height: 15,
-              ),
-              textItem("Password", _passwordController, true),
-              const SizedBox(
-                height: 15,
-              ),
-              colorButton("Sign Up"),
-              const SizedBox(
-                height: 15,
-              ),
-              Row(
+    return Consumer(
+      builder: (context, ref, child) {
+        final _auth = ref.watch(authenticationProvider);
+        final database = ref.read(databaseProvider);
+        return Scaffold(
+          body: SingleChildScrollView(
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              color: Colors.black,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
+                children: [
                   const Text(
-                    "If you already have an Account ?",
+                    "Sign Up",
                     style: TextStyle(
+                      fontSize: 35,
                       color: Colors.white,
-                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (builder) => const SignInPage()),
-                          (route) => false);
-                    },
-                    child: const Text(
-                      " Login",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 18,
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  buttonItem(
+                      "assets/logo/google.svg", "Continue with Google", 25,
+                      () async {
+                    await _auth
+                        .signInWithGoogle(context)
+                        .whenComplete(() async => {
+                              await database.createUser(Userdata(
+                                _auth.auth.currentUser!.displayName.toString(),
+                                _auth.auth.currentUser!.email.toString(),
+                              ))
+                            });
+                  }),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    "Or",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  textItem("Email", _emailController, false),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  textItem("Password", _passwordController, true),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  colorButton("Sign Up"),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text(
+                        "If you already have an Account ?",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
                       ),
-                    ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (builder) => const SignInPage()),
+                              (route) => false);
+                        },
+                        child: const Text(
+                          " Login",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -197,7 +215,9 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget colorButton(String name) {
+  Widget colorButton(
+    String name,
+  ) {
     return InkWell(
       onTap: () async {
         setState(() {

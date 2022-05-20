@@ -1,6 +1,8 @@
+import 'package:cashcounter/provider/auth_provider.dart';
 import 'package:cashcounter/screens/authscreen/signup.dart';
 import 'package:cashcounter/service/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -22,96 +24,103 @@ class _SignInPageState extends State<SignInPage> {
   // AuthClass authClass = AuthClass();
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          color: Colors.black,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                "Sign In",
-                style: TextStyle(
-                  fontSize: 35,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              buttonItem("assets/logo/google.svg", "Continue with Google", 25,
-                  () async {
-                await authClass.googleSignIn(context);
-              }),
-              const SizedBox(
-                height: 15,
-              ),
-              const Text(
-                "Or",
-                style: TextStyle(color: Colors.white, fontSize: 18),
-              ),
-              const SizedBox(
-                height: 10,
-              ),
-              textItem("Email", _emailController, false),
-              const SizedBox(
-                height: 15,
-              ),
-              textItem("Password", _passwordController, true),
-              const SizedBox(
-                height: 15,
-              ),
-              colorButton("Sign Up"),
-              const SizedBox(
-                height: 15,
-              ),
-              Row(
+    return Consumer(
+      builder: (context, ref, child) {
+        final _auth = ref.watch(authenticationProvider);
+
+        return Scaffold(
+          body: SingleChildScrollView(
+            child: Container(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height,
+              color: Colors.black,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    "If you don't have an Account ?",
+                    "Sign In",
                     style: TextStyle(
+                      fontSize: 35,
                       color: Colors.white,
-                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(
-                              builder: (builder) => const SignUpPage()),
-                          (route) => false);
-                    },
-                    child: const Text(
-                      " Sign Up",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 18,
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  buttonItem(
+                      "assets/logo/google.svg", "Continue with Google", 25,
+                      () async {
+                    await _auth.signInWithGoogle(context);
+                  }),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  const Text(
+                    "Or",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  textItem("Email", _emailController, false),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  textItem("Password", _passwordController, true),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  colorButton("Sign Up"),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "If you don't have an Account ?",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
                       ),
+                      InkWell(
+                        onTap: () {
+                          Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (builder) => const SignUpPage()),
+                              (route) => false);
+                        },
+                        child: const Text(
+                          " Sign Up",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 10,
+                  ),
+                  const Text(
+                    "Forgot Password ?",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 17,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(
-                height: 10,
-              ),
-              const Text(
-                "Forgot Password ?",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 17,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -119,7 +128,7 @@ class _SignInPageState extends State<SignInPage> {
       String imagePath, String buttonName, double size, Function() onTap) {
     return InkWell(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: MediaQuery.of(context).size.width - 60,
         height: 60,
         child: Card(
@@ -158,7 +167,7 @@ class _SignInPageState extends State<SignInPage> {
 
   Widget textItem(
       String name, TextEditingController controller, bool obsecureText) {
-    return Container(
+    return SizedBox(
       width: MediaQuery.of(context).size.width - 70,
       height: 55,
       child: TextFormField(

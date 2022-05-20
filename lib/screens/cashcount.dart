@@ -1,11 +1,14 @@
 import 'dart:ui';
+import 'package:flutter_tts/flutter_tts.dart';
 
 import 'package:cashcounter/screens/authscreen/login.dart';
 import 'package:cashcounter/widgets/setting.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:keyboard_attachable/keyboard_attachable.dart';
+import 'package:number_to_words_english/number_to_words_english.dart';
 
 class CashCounter extends StatefulWidget {
   CashCounter({Key? key}) : super(key: key);
@@ -19,6 +22,9 @@ enum Menu { itemOne, itemTwo, itemThree, itemFour }
 class _CashCounterState extends State<CashCounter> {
   var payerString = "<--- Enter The Amount Tally Payer";
   var calNum = 0;
+  var notes = 0;
+  var text = "";
+  final FlutterTts tts = FlutterTts();
 
   final List<String> items = [
     'Item1',
@@ -29,6 +35,7 @@ class _CashCounterState extends State<CashCounter> {
   String? selectedValue;
 
   late String _selectedMenu;
+  List<TextEditingController> _controllers = [];
 
   List<DropdownMenuItem<String>> _addDividersAfterItems(List<String> items) {
     List<DropdownMenuItem<String>> _menuItems = [];
@@ -94,6 +101,18 @@ class _CashCounterState extends State<CashCounter> {
     {"2": "0"},
     {"1": "0"}
   ];
+  List<Map<String, String>> noteCal = [
+    {"2000": "0"},
+    {"500": "0"},
+    {"200": "0"},
+    {"100": "0"},
+    {"50": "0"},
+    {"20": "0"},
+    {"10": "0"},
+    {"5": "0"},
+    {"2": "0"},
+    {"1": "0"}
+  ];
   TextEditingController controller = TextEditingController(
     text: '',
   );
@@ -119,6 +138,8 @@ class _CashCounterState extends State<CashCounter> {
   @override
   void initState() {
     super.initState();
+    tts.setLanguage('en');
+
     controller.addListener(() {
       if (controller.text.isEmpty) {
         setState(() {
@@ -142,11 +163,18 @@ class _CashCounterState extends State<CashCounter> {
     // TODO: implement setState
     super.setState(fn);
     calNum = 0;
-    listNotesCal.forEach((element) {
+    notes = 0;
+
+    for (var element in listNotesCal) {
       element.forEach((key, value) {
         calNum += int.parse(value.toString());
       });
-    });
+    }
+    for (var element in noteCal) {
+      element.forEach((key, value) {
+        notes += int.parse(value.toString());
+      });
+    }
   }
 
   @override
@@ -154,7 +182,7 @@ class _CashCounterState extends State<CashCounter> {
     return Scaffold(
       bottomNavigationBar: const BottomAppBar(
         color: Colors.transparent,
-        child: Text('bottom screen widget'),
+        child: Text('bottom screen '),
         elevation: 0,
       ),
       body: FooterLayout(
@@ -174,7 +202,42 @@ class _CashCounterState extends State<CashCounter> {
                       decoration: const BoxDecoration(
                           shape: BoxShape.circle, color: Colors.blue),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          setState(() {
+                            calNum = 0;
+                            notes = 0;
+                            listNotesCal = [
+                              {"2000": "0"},
+                              {"500": "0"},
+                              {"200": "0"},
+                              {"100": "0"},
+                              {"50": "0"},
+                              {"20": "0"},
+                              {"10": "0"},
+                              {"5": "0"},
+                              {"2": "0"},
+                              {"1": "0"}
+                            ];
+                            noteCal = [
+                              {"2000": "0"},
+                              {"500": "0"},
+                              {"200": "0"},
+                              {"100": "0"},
+                              {"50": "0"},
+                              {"20": "0"},
+                              {"10": "0"},
+                              {"5": "0"},
+                              {"2": "0"},
+                              {"1": "0"}
+                            ];
+                            controller.text = "";
+                            for (var element in _controllers) {
+                              element.text = "";
+                            }
+                          });
+
+                          Fluttertoast.showToast(msg: "Cleared");
+                        },
                         icon: const Icon(Icons.delete),
                         iconSize: 20,
                         color: Colors.white,
@@ -187,14 +250,17 @@ class _CashCounterState extends State<CashCounter> {
                             const BorderRadius.all(Radius.circular(16.0)),
                         child: Container(
                             padding: const EdgeInsets.only(
-                                left: 30, right: 30, bottom: 8, top: 8),
+                                left: 5, right: 5, bottom: 8, top: 8),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.blue, width: 1),
                               color: Colors.white,
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(16.0)),
                             ),
-                            child: const Center(child: Text("1 Notes"))),
+                            child: Center(
+                                child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Text("Total ${notes} Notes")))),
                       ),
                     ),
                   ),
@@ -206,14 +272,17 @@ class _CashCounterState extends State<CashCounter> {
                             const BorderRadius.all(Radius.circular(16.0)),
                         child: Container(
                             padding: const EdgeInsets.only(
-                                left: 30, right: 30, bottom: 8, top: 8),
+                                left: 5, right: 5, bottom: 8, top: 8),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.blue, width: 1),
                               color: Colors.white,
                               borderRadius:
                                   const BorderRadius.all(Radius.circular(16.0)),
                             ),
-                            child: const Center(child: Text("1 Notes"))),
+                            child: Center(
+                                child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Text("Total: ₹${calNum}")))),
                       ),
                     ),
                   ),
@@ -223,7 +292,10 @@ class _CashCounterState extends State<CashCounter> {
                           shape: BoxShape.circle, color: Colors.blue),
                       child: PopupMenuButton<Menu>(
                           iconSize: 20,
-                          icon: const Icon(Icons.menu),
+                          icon: const Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                          ),
                           // Callback that sets the selected popup menu item.
                           onSelected: (Menu item) {
                             setState(() {
@@ -312,41 +384,6 @@ class _CashCounterState extends State<CashCounter> {
                                   ),
                                 ),
                               ])),
-                  Container(
-                      height: 35,
-                      decoration: const BoxDecoration(
-                          shape: BoxShape.circle, color: Colors.blue),
-                      child: IconButton(
-                        onPressed: () {
-                          // create the alert dialog
-                          // showDialog(
-                          //   context: context,
-                          //   builder: (BuildContext context) {
-                          //     return AlertDialog(
-                          //       title: const Text('Alert Dialog Title'),
-                          //       content: Text(
-                          //         'This is an alert dialog. You can use this to display information to the user.',
-                          //       ),
-                          //       actions: <Widget>[
-                          //         ElevatedButton(
-                          //           child: const Text('DISMISS'),
-                          //           onPressed: () {
-                          //             Navigator.of(context).pop();
-                          //           },
-                          //         ),
-                          //       ],
-                          //     );
-                          //   },
-                          // );
-
-                          // Navigator.of(context).push(MaterialPageRoute(
-                          //   builder: (context) => const SignInPage(),
-                          // ));
-                        },
-                        icon: const Icon(Icons.menu),
-                        iconSize: 20,
-                        color: Colors.white,
-                      )),
                 ],
               ),
               const Divider(),
@@ -358,12 +395,17 @@ class _CashCounterState extends State<CashCounter> {
                       decoration: const BoxDecoration(
                           shape: BoxShape.circle, color: Colors.blue),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          tts.stop();
+                          await tts.speak(NumberToWordsEnglish.convert(calNum));
+                        },
                         icon: const Icon(Icons.volume_up),
                         iconSize: 20,
                         color: Colors.white,
                       )),
-                  const Expanded(child: Text("Zero"))
+                  Expanded(
+                      child: Text(
+                          NumberToWordsEnglish.convert(calNum).toTitleCase())),
                 ],
               ),
               const Divider(),
@@ -426,212 +468,232 @@ class _CashCounterState extends State<CashCounter> {
             ],
           ),
         ),
-        child: Container(
-          child: Column(children: <Widget>[
-            Container(
-              color: Colors.grey[300],
-              child: SizedBox(
-                height: 60,
-                child: Row(
-                  children: [
-                    //create box textfield for cash
-                    Expanded(
-                      flex: 2,
-                      child: Container(
-                        margin: const EdgeInsets.all(10),
-                        child: TextField(
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp("[0-9]"))
-                          ],
-                          keyboardType: TextInputType.number,
-                          controller: controller,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                            labelText: 'Payer',
-                          ),
+        child: Column(children: <Widget>[
+          Container(
+            color: Colors.grey[300],
+            child: SizedBox(
+              height: 60,
+              child: Row(
+                children: [
+                  //create box textfield for cash
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      margin: const EdgeInsets.all(10),
+                      child: TextField(
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                        ],
+                        keyboardType: TextInputType.number,
+                        controller: controller,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Payer',
                         ),
                       ),
                     ),
+                  ),
 
-                    Expanded(
-                        flex: 5,
-                        child: Text(
-                          payerString,
-                          style: TextStyle(
-                            color: (payerString.contains("+"))
-                                ? Colors.green
-                                : !payerString.contains("<--- ")
-                                    ? Colors.red
-                                    : Colors.black,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ))
-                  ],
-                ),
+                  Expanded(
+                      flex: 5,
+                      child: Text(
+                        payerString,
+                        style: TextStyle(
+                          color: (payerString.contains("+"))
+                              ? Colors.green
+                              : !payerString.contains("<--- ")
+                                  ? Colors.red
+                                  : Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ))
+                ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                reverse: true, // here
+          ),
+          Expanded(
+            child: ListView.builder(
+              reverse: true, // here
 
-                itemCount: listNotes.length,
-                itemBuilder: (BuildContext context, int index) {
-                  var item = listNotes[index];
-                  return Container(
-                    color: Colors.amber,
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Image.asset('assets/notes/${index + 1}.jpg',
-                              height: 50),
-                          // SizedBox(width: 10),
-                          SizedBox(
-                            width: 50,
-                            child: Text(
-                              listNotes.reversed.toList()[index],
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.all(2.0),
-                            child: Text(
-                              "X",
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          SizedBox(
-                              width: 60,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.rectangle,
-                                  border: Border.all(
-                                    color: Colors.black,
-                                    width: 1.0,
-                                  ),
-                                ),
-                                child: TextField(
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                        RegExp("[0-9]"))
-                                  ],
+              itemCount: listNotes.length,
+              itemBuilder: (BuildContext context, int index) {
+                _controllers.add(TextEditingController());
 
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  decoration: const InputDecoration(
-                                    hintText: '0',
-                                    border: InputBorder.none,
-                                  ),
-                                  onChanged: (String value) {
-                                    int tempNum = 0;
-                                    if (value.isNotEmpty) {
-                                      if (tempNum == 0) {
-                                        tempNum = int.parse(listNotesCal[index]
-                                                [item]
-                                            .toString());
-                                      } else {
-                                        tempNum = 0;
-                                      }
-                                    }
-                                    debugPrint(tempNum.toString());
-                                    if (value == "") {
-                                      calNum = 0;
-                                      setState(() {
-                                        listNotesCal[index][item] = "0";
-                                      });
-                                    } else {
-                                      setState(() {
-                                        listNotesCal[index][item] =
-                                            ((int.parse(value)) *
-                                                    int.parse(listNotes.reversed
-                                                        .toList()[index]))
-                                                .toString();
-                                      });
-                                    }
-                                    if (controller.text.isEmpty) {
-                                      setState(() {
-                                        payerString =
-                                            "<--- Enter The Amount Tally Payer";
-                                      });
-                                    } else if (calNum >
-                                        int.parse(controller.text)) {
-                                      setState(() {
-                                        payerString =
-                                            "Greater By +₹${calNum - int.parse(controller.text)}";
-                                      });
-                                    } else {
-                                      setState(() {
-                                        payerString =
-                                            "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
-                                      });
-                                    }
-
-                                    // calNum = 0;
-                                    // if (int.parse(value) < tempNum) {
-                                    //   setState(() {
-                                    //     calNum = int.parse(listNotesCal[index]
-                                    //             [item]
-                                    //         .toString());
-                                    //   });
-                                    // } else {
-                                    //   calNum -= tempNum;
-                                    // }
-
-                                    // print("sd" +
-                                    //     listNotesCal[index][item].toString());
-                                  },
-
-                                  // onChanged: (value) => {
-                                  //   listNotesCal.add({
-                                  //     "${listNotes.reversed.toList()[index]}":
-                                  //         (int.parse(value) *
-                                  //                 int.parse(listNotes.reversed
-                                  //                     .toList()[index]))
-                                  //             .toString()
-                                  //   }),
-                                  //   listNotesCal[listNotesCal.indexWhere(
-                                  //           (element) =>
-                                  //               element ==
-                                  //               listNotes.reversed
-                                  //                   .toList()[index])] =
-                                  //       (int.parse(value) *
-                                  //               int.parse(listNotes.reversed
-                                  //                   .toList()[index]))
-                                  //           .toString(),
-                                  //   listNotesCal.forEach((element) {
-                                  //     print(element[
-                                  //         "${listNotes.reversed.toList()[index]}"]);
-                                  //   }),
-                                  // }
-                                  // create setstate for textfield
-                                ),
-                              )),
-                          const SizedBox(width: 8),
-                          const Text(
-                            "= ",
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            listNotesCal[index]["${listNotes[index]}"]
-                                .toString(),
+                var item = listNotes.reversed.toList()[index];
+                return Container(
+                  color: Colors.amber,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      children: [
+                        Image.asset('assets/notes/${index + 1}.jpg',
+                            height: 50),
+                        // SizedBox(width: 10),
+                        SizedBox(
+                          width: 50,
+                          child: Text(
+                            listNotes.reversed.toList()[index],
+                            textAlign: TextAlign.center,
                             style: const TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          )
-                        ],
-                      ),
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.all(2.0),
+                          child: Text(
+                            "X",
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                            width: 60,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.rectangle,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: _controllers[index],
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[0-9]"))
+                                ],
+
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                decoration: const InputDecoration(
+                                  hintText: '0',
+                                  border: InputBorder.none,
+                                ),
+                                onChanged: (String value) {
+                                  // notes = 0;
+                                  int tempNum = 0;
+                                  if (value.isNotEmpty) {
+                                    if (tempNum == 0) {
+                                      tempNum = int.parse(listNotesCal.reversed
+                                          .toList()[index][item]
+                                          .toString());
+                                    } else {
+                                      tempNum = 0;
+                                    }
+                                  }
+
+                                  // debugPrint(tempNum.toString());
+                                  if (value == "") {
+                                    calNum = 0;
+                                    notes = 0;
+                                    setState(() {
+                                      noteCal.reversed.toList()[index][item] =
+                                          "0";
+                                      listNotesCal.reversed.toList()[index]
+                                          [item] = "0";
+                                    });
+                                  } else {
+                                    setState(() {
+                                      noteCal.reversed.toList()[index][item] =
+                                          value;
+                                      listNotesCal.reversed.toList()[index]
+                                          [item] = ((int.parse(value)) *
+                                              int.parse(listNotes.reversed
+                                                  .toList()[index]))
+                                          .toString();
+                                    });
+                                  }
+                                  if (calNum >= 999999999) {
+                                    noteCal.reversed.toList()[index][item] =
+                                        "0";
+                                    listNotesCal.reversed.toList()[index]
+                                        [item] = "0";
+                                    Fluttertoast.showToast(
+                                        msg: "Can Not Be More Than 1 ARAB");
+                                  }
+                                  if (controller.text.isEmpty) {
+                                    setState(() {
+                                      payerString =
+                                          "<--- Enter The Amount Tally Payer";
+                                    });
+                                  } else if (calNum >=
+                                      int.parse(controller.text)) {
+                                    setState(() {
+                                      payerString =
+                                          "Greater By +₹${calNum - int.parse(controller.text)}";
+                                    });
+                                  } else {
+                                    setState(() {
+                                      payerString =
+                                          "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
+                                    });
+                                  }
+                                  print(notes);
+
+                                  // calNum = 0;
+                                  // if (int.parse(value) < tempNum) {
+                                  //   setState(() {
+                                  //     calNum = int.parse(listNotesCal[index]
+                                  //             [item]
+                                  //         .toString());
+                                  //   });
+                                  // } else {
+                                  //   calNum -= tempNum;
+                                  // }
+
+                                  // print("sd" +
+                                  //     listNotesCal[index][item].toString());
+                                },
+
+                                // onChanged: (value) => {
+                                //   listNotesCal.add({
+                                //     "${listNotes.reversed.toList()[index]}":
+                                //         (int.parse(value) *
+                                //                 int.parse(listNotes.reversed
+                                //                     .toList()[index]))
+                                //             .toString()
+                                //   }),
+                                //   listNotesCal[listNotesCal.indexWhere(
+                                //           (element) =>
+                                //               element ==
+                                //               listNotes.reversed
+                                //                   .toList()[index])] =
+                                //       (int.parse(value) *
+                                //               int.parse(listNotes.reversed
+                                //                   .toList()[index]))
+                                //           .toString(),
+                                //   listNotesCal.forEach((element) {
+                                //     print(element[
+                                //         "${listNotes.reversed.toList()[index]}"]);
+                                //   }),
+                                // }
+                                // create setstate for textfield
+                              ),
+                            )),
+                        const SizedBox(width: 8),
+                        const Text(
+                          "= ",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          listNotesCal.reversed
+                              .toList()[index]
+                                  ["${listNotes.reversed.toList()[index]}"]
+                              .toString(),
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        )
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ]),
-        ),
+          ),
+        ]),
       ),
     );
   }
@@ -743,4 +805,13 @@ class _CashCounterState extends State<CashCounter> {
       ),
     );
   }
+}
+
+extension StringCasingExtension on String {
+  String toCapitalized() =>
+      length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
+  String toTitleCase() => replaceAll(RegExp(' +'), ' ')
+      .split(' ')
+      .map((str) => str.toCapitalized())
+      .join(' ');
 }

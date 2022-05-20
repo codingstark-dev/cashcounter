@@ -11,7 +11,7 @@ class _CreditState extends State<Credit> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      child: Text("Credit"),
+      child: Text("Something went wrong, please try again"),
     );
   }
 }
