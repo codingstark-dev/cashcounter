@@ -99,7 +99,9 @@ class _CalculatorState extends State<Calculator> {
                                         DocumentSnapshot<Map<String, dynamic>>>(
                                     stream: database.getUserDetail,
                                     builder: (context, snapshot) {
-                                      if (snapshot.error != null) {
+                                      if (snapshot.error != null &&
+                                          snapshot.data == null) {
+                                        print(snapshot.error);
                                         return const Center(
                                             child: Text(
                                                 'Some error occurred')); // Show an error just in case(no internet etc)
@@ -111,7 +113,8 @@ class _CalculatorState extends State<Calculator> {
                                       //           CircularProgressIndicator()); // Show a CircularProgressIndicator when the stream is loading
 
                                       // }
-                                      if (!snapshot.hasData) {
+                                      if (!snapshot.hasData &&
+                                          snapshot.data == null) {
                                         return const Center(
                                             child:
                                                 CircularProgressIndicator()); // Show a CircularProgressIndicator when the stream is loading
@@ -196,12 +199,12 @@ class _CalculatorState extends State<Calculator> {
                         //           CircularProgressIndicator()); // Show a CircularProgressIndicator when the stream is loading
 
                         // }
-                        if (snapshot.error != null) {
+                        if (snapshot.error != null && snapshot.data == null) {
                           return const Center(
                               child: Text(
                                   'Some error occurred')); // Show an error just in case(no internet etc)
                         }
-                        if (!snapshot.hasData) {
+                        if (!snapshot.hasData || snapshot.data == null) {
                           return const Center(
                               child:
                                   CircularProgressIndicator()); // Show a CircularProgressIndicator when the stream is loading
