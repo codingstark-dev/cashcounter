@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'package:cashcounter/screens/authscreen/login.dart';
@@ -11,7 +12,7 @@ import 'package:keyboard_attachable/keyboard_attachable.dart';
 import 'package:number_to_words_english/number_to_words_english.dart';
 
 class CashCounter extends StatefulWidget {
-  CashCounter({Key? key}) : super(key: key);
+  const CashCounter({Key? key}) : super(key: key);
 
   @override
   State<CashCounter> createState() => _CashCounterState();
@@ -24,6 +25,8 @@ class _CashCounterState extends State<CashCounter> {
   var calNum = 0;
   var notes = 0;
   var text = "";
+  var plus = 0;
+  var minus = 0;
   final FlutterTts tts = FlutterTts();
 
   final List<String> items = [
@@ -36,7 +39,18 @@ class _CashCounterState extends State<CashCounter> {
 
   late String _selectedMenu;
   List<TextEditingController> _controllers = [];
+  TextEditingController plusCon = TextEditingController();
+  TextEditingController minusCon = TextEditingController();
+  TextEditingController nameCon = TextEditingController();
+  TextEditingController mobCon = TextEditingController();
+  TextEditingController acCon = TextEditingController();
+  TextEditingController remarkCon = TextEditingController();
 
+  late String name;
+  late String ac;
+
+  late String remark;
+  late String mobNum;
   List<DropdownMenuItem<String>> _addDividersAfterItems(List<String> items) {
     List<DropdownMenuItem<String>> _menuItems = [];
     for (var item in items) {
@@ -160,7 +174,6 @@ class _CashCounterState extends State<CashCounter> {
 
   @override
   void setState(VoidCallback fn) {
-    // TODO: implement setState
     super.setState(fn);
     calNum = 0;
     notes = 0;
@@ -175,14 +188,79 @@ class _CashCounterState extends State<CashCounter> {
         notes += int.parse(value.toString());
       });
     }
+    calNum = calNum + plus;
+    calNum = calNum - minus;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: const BottomAppBar(
+      bottomNavigationBar: BottomAppBar(
         color: Colors.transparent,
-        child: Text('bottom screen '),
+        child: SizedBox(
+          height: 100,
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                      height: 35,
+                      decoration: const BoxDecoration(
+                          shape: BoxShape.circle, color: Colors.blue),
+                      child: IconButton(
+                        onPressed: () async {
+                          tts.stop();
+                          await tts.speak(NumberToWordsEnglish.convert(calNum));
+                        },
+                        icon: const Icon(Icons.history),
+                        iconSize: 20,
+                        color: Colors.white,
+                      )),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        height: 45,
+                        child: DateTimePicker(
+                          type: DateTimePickerType.dateTimeSeparate,
+                          dateMask: 'd/M/yyyy',
+                          initialValue: DateTime.now().toString(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          icon: Icon(Icons.history),
+                          dateLabelText: 'Date',
+                          fieldLabelText: "ss",
+                          timeLabelText: "Hour",
+                          use24HourFormat: false,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          selectableDayPredicate: (date) {
+                            // Disable weekend days to select from the calendar
+                            if (date.weekday == 6 || date.weekday == 7) {
+                              return false;
+                            }
+
+                            return true;
+                          },
+                          onChanged: (val) => print(val),
+                          validator: (val) {
+                            print(val);
+                            return null;
+                          },
+                          onSaved: (val) => print(val),
+                        ),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ],
+          ),
+        ),
         elevation: 0,
       ),
       body: FooterLayout(
@@ -230,9 +308,18 @@ class _CashCounterState extends State<CashCounter> {
                               {"2": "0"},
                               {"1": "0"}
                             ];
-                            controller.text = "";
+                            plus = 0;
+                            minus = 0;
+                            controller.clear();
+                            nameCon.clear();
+                            acCon.clear();
+                            remarkCon.clear();
+                            mobCon.clear();
+                            plusCon.clear();
+                            minusCon.clear();
+
                             for (var element in _controllers) {
-                              element.text = "";
+                              element.clear();
                             }
                           });
 
@@ -282,7 +369,7 @@ class _CashCounterState extends State<CashCounter> {
                             child: Center(
                                 child: SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
-                                    child: Text("Total: ₹${calNum}")))),
+                                    child: Text("Total: ₹$calNum")))),
                       ),
                     ),
                   ),
@@ -290,100 +377,7 @@ class _CashCounterState extends State<CashCounter> {
                       height: 35,
                       decoration: const BoxDecoration(
                           shape: BoxShape.circle, color: Colors.blue),
-                      child: PopupMenuButton<Menu>(
-                          iconSize: 20,
-                          icon: const Icon(
-                            Icons.menu,
-                            color: Colors.white,
-                          ),
-                          // Callback that sets the selected popup menu item.
-                          onSelected: (Menu item) {
-                            setState(() {
-                              _selectedMenu = item.name;
-                            });
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<Menu>>[
-                                PopupMenuItem<Menu>(
-                                  value: Menu.itemOne,
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.picture_as_pdf,
-                                        color: Colors.red,
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Text('PDF Receipt'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<Menu>(
-                                  value: Menu.itemTwo,
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.whatsapp,
-                                        color: Colors.green,
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Text('Share to watsapp'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<Menu>(
-                                  value: Menu.itemTwo,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.copy,
-                                        color: Colors.blue[200],
-                                      ),
-                                      const SizedBox(
-                                        width: 10,
-                                      ),
-                                      const Text('Copy Details'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<Menu>(
-                                  value: Menu.itemTwo,
-                                  child: Row(
-                                    children: const [
-                                      Icon(
-                                        Icons.stars,
-                                        color: Color.fromARGB(255, 255, 11, 92),
-                                      ),
-                                      SizedBox(
-                                        width: 10,
-                                      ),
-                                      Text('Give 5 Star'),
-                                    ],
-                                  ),
-                                ),
-                                PopupMenuItem<Menu>(
-                                  onTap: () {
-                                    Future.delayed(const Duration(seconds: 0),
-                                        () => newMethod(context));
-                                  },
-                                  value: Menu.itemTwo,
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.settings,
-                                        color: Colors.blue[200],
-                                      ),
-                                      const SizedBox(
-                                        width: 10,
-                                      ),
-                                      const Text('Settings'),
-                                    ],
-                                  ),
-                                ),
-                              ])),
+                      child: popupMenu()),
                 ],
               ),
               const Divider(),
@@ -404,8 +398,8 @@ class _CashCounterState extends State<CashCounter> {
                         color: Colors.white,
                       )),
                   Expanded(
-                      child: Text(
-                          NumberToWordsEnglish.convert(calNum).toTitleCase())),
+                      child: Text(NumberToWordsEnglish.convert(calNum.abs())
+                          .toTitleCase())),
                 ],
               ),
               const Divider(),
@@ -420,47 +414,64 @@ class _CashCounterState extends State<CashCounter> {
                             const BorderRadius.all(Radius.circular(16.0)),
                         child: Container(
                             padding: const EdgeInsets.only(
-                                left: 30, right: 30, bottom: 8, top: 8),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.blue, width: 1),
-                              color: Colors.white,
+                                left: 10, right: 10, bottom: 8, top: 8),
+                            decoration: const BoxDecoration(
+                              // border: Border.all(color: Colors.blue, width: 1),
+                              color: Colors.red,
                               borderRadius:
-                                  const BorderRadius.all(Radius.circular(16.0)),
+                                  BorderRadius.all(Radius.circular(16.0)),
                             ),
-                            child: const Center(child: Text("1 Notes"))),
+                            child: const Center(
+                                child: Text(
+                              "Save Out",
+                              style: TextStyle(color: Colors.white),
+                            ))),
                       ),
                     ),
                   ),
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(16.0)),
-                      child: Container(
-                          padding: const EdgeInsets.only(
-                              left: 30, right: 30, bottom: 8, top: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.blue, width: 1),
-                            color: Colors.white,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(16.0)),
-                          ),
-                          child: const Center(child: Text("1 Notes"))),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 5, right: 5),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(16.0)),
+                        child: Container(
+                            padding: const EdgeInsets.only(
+                                left: 10, right: 10, bottom: 8, top: 8),
+                            decoration: const BoxDecoration(
+                              color: Color.fromARGB(255, 0, 74, 159),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(16.0)),
+                            ),
+                            child: const Center(
+                                child: Text(
+                              "VIEW",
+                              style: TextStyle(color: Colors.white),
+                            ))),
+                      ),
                     ),
                   ),
                   Expanded(
-                    child: ClipRRect(
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(16.0)),
-                      child: Container(
-                          padding: const EdgeInsets.only(
-                              left: 30, right: 30, bottom: 8, top: 8),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.blue, width: 1),
-                            color: Colors.white,
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(16.0)),
-                          ),
-                          child: const Center(child: Text("1 Notes"))),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 5, right: 5),
+                      child: ClipRRect(
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(16.0)),
+                        child: Container(
+                            padding: const EdgeInsets.only(
+                                left: 10, right: 10, bottom: 8, top: 8),
+                            decoration: const BoxDecoration(
+                              color: Color.fromARGB(255, 9, 120, 12),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(16.0)),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "Save In",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            )),
+                      ),
                     ),
                   ),
                 ],
@@ -502,7 +513,9 @@ class _CashCounterState extends State<CashCounter> {
                           color: (payerString.contains("+"))
                               ? Colors.green
                               : !payerString.contains("<--- ")
-                                  ? Colors.red
+                                  ? payerString.contains("Matched")
+                                      ? Colors.green
+                                      : Colors.red
                                   : Colors.black,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -513,43 +526,203 @@ class _CashCounterState extends State<CashCounter> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              reverse: true, // here
+            child: ListView(
+              children: [
+                ListView.builder(
+                  reverse: true, // here
+                  shrinkWrap: true,
+                  physics: ScrollPhysics(),
 
-              itemCount: listNotes.length,
-              itemBuilder: (BuildContext context, int index) {
-                _controllers.add(TextEditingController());
+                  itemCount: listNotes.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    _controllers.add(TextEditingController());
 
-                var item = listNotes.reversed.toList()[index];
-                return Container(
-                  color: Colors.amber,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        Image.asset('assets/notes/${index + 1}.jpg',
-                            height: 50),
-                        // SizedBox(width: 10),
-                        SizedBox(
-                          width: 50,
-                          child: Text(
-                            listNotes.reversed.toList()[index],
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                    var item = listNotes.reversed.toList()[index];
+                    return Container(
+                      color: Colors.amber,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          children: [
+                            Image.asset('assets/notes/${index + 1}.jpg',
+                                height: 50),
+                            // SizedBox(width: 10),
+                            SizedBox(
+                              width: 50,
+                              child: Text(
+                                listNotes.reversed.toList()[index],
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.all(2.0),
+                              child: Text(
+                                "X",
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                                width: 60,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.rectangle,
+                                    border: Border.all(
+                                      color: Colors.black,
+                                      width: 1.0,
+                                    ),
+                                  ),
+                                  child: TextField(
+                                    controller: _controllers[index],
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.allow(
+                                          RegExp("[0-9]"))
+                                    ],
+
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.center,
+                                    decoration: const InputDecoration(
+                                      hintText: '0',
+                                      border: InputBorder.none,
+                                    ),
+                                    onChanged: (String value) {
+                                      // notes = 0;
+                                      int tempNum = 0;
+                                      if (value.isNotEmpty) {
+                                        if (tempNum == 0) {
+                                          tempNum = int.parse(listNotesCal
+                                              .reversed
+                                              .toList()[index][item]
+                                              .toString());
+                                        } else {
+                                          tempNum = 0;
+                                        }
+                                      }
+
+                                      // debugPrint(tempNum.toString());
+                                      if (value == "") {
+                                        calNum = 0;
+                                        notes = 0;
+                                        setState(() {
+                                          noteCal.reversed.toList()[index]
+                                              [item] = "0";
+                                          listNotesCal.reversed.toList()[index]
+                                              [item] = "0";
+                                        });
+                                      } else {
+                                        setState(() {
+                                          noteCal.reversed.toList()[index]
+                                              [item] = value;
+                                          listNotesCal.reversed.toList()[index]
+                                              [item] = ((int.parse(value)) *
+                                                  int.parse(listNotes.reversed
+                                                      .toList()[index]))
+                                              .toString();
+                                        });
+                                      }
+                                      if (calNum >= 999999999) {
+                                        noteCal.reversed.toList()[index][item] =
+                                            "0";
+                                        listNotesCal.reversed.toList()[index]
+                                            [item] = "0";
+                                        Fluttertoast.showToast(
+                                            msg: "Can Not Be More Than 1 ARAB");
+                                      }
+                                      if (controller.text.isEmpty) {
+                                        setState(() {
+                                          payerString =
+                                              "<--- Enter The Amount Tally Payer";
+                                        });
+                                      } else if (calNum >
+                                          int.parse(controller.text)) {
+                                        setState(() {
+                                          payerString =
+                                              "Greater By +₹${calNum - int.parse(controller.text)}";
+                                        });
+                                      } else if (calNum ==
+                                          int.parse(controller.text)) {
+                                        setState(() {
+                                          payerString =
+                                              "Matched Success To Payer ✅";
+                                        });
+                                      } else {
+                                        setState(() {
+                                          payerString =
+                                              "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
+                                        });
+                                      }
+                                      print(notes);
+
+                                      // calNum = 0;
+                                      // if (int.parse(value) < tempNum) {
+                                      //   setState(() {
+                                      //     calNum = int.parse(listNotesCal[index]
+                                      //             [item]
+                                      //         .toString());
+                                      //   });
+                                      // } else {
+                                      //   calNum -= tempNum;
+                                      // }
+
+                                      // print("sd" +
+                                      //     listNotesCal[index][item].toString());
+                                    },
+
+                                    // onChanged: (value) => {
+                                    //   listNotesCal.add({
+                                    //     "${listNotes.reversed.toList()[index]}":
+                                    //         (int.parse(value) *
+                                    //                 int.parse(listNotes.reversed
+                                    //                     .toList()[index]))
+                                    //             .toString()
+                                    //   }),
+                                    //   listNotesCal[listNotesCal.indexWhere(
+                                    //           (element) =>
+                                    //               element ==
+                                    //               listNotes.reversed
+                                    //                   .toList()[index])] =
+                                    //       (int.parse(value) *
+                                    //               int.parse(listNotes.reversed
+                                    //                   .toList()[index]))
+                                    //           .toString(),
+                                    //   listNotesCal.forEach((element) {
+                                    //     print(element[
+                                    //         "${listNotes.reversed.toList()[index]}"]);
+                                    //   }),
+                                    // }
+                                    // create setstate for textfield
+                                  ),
+                                )),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "= ",
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              listNotesCal.reversed
+                                  .toList()[index]
+                                      ["${listNotes.reversed.toList()[index]}"]
+                                  .toString(),
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            )
+                          ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.all(2.0),
-                          child: Text(
-                            "X",
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        SizedBox(
-                            width: 60,
+                      ),
+                    );
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.rectangle,
@@ -559,143 +732,327 @@ class _CashCounterState extends State<CashCounter> {
                                 ),
                               ),
                               child: TextField(
-                                controller: _controllers[index],
+                                controller: plusCon,
+                                onChanged: (value) {
+                                  plus = 0;
+
+                                  setState(() {
+                                    if (value.isEmpty) {
+                                      calNum -= plus;
+                                    } else if (int.parse(value) < plus) {
+                                      calNum -= plus;
+                                    }
+                                  });
+
+                                  if (value.isEmpty) {
+                                    calNum -= plus;
+                                  } else {
+                                    setState(() {
+                                      plus = int.parse(value);
+                                    });
+                                  }
+                                },
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
                                       RegExp("[0-9]"))
                                 ],
-
                                 keyboardType: TextInputType.number,
                                 textAlign: TextAlign.center,
                                 decoration: const InputDecoration(
-                                  hintText: '0',
+                                  hintText: 'Plus Rs.',
                                   border: InputBorder.none,
                                 ),
-                                onChanged: (String value) {
-                                  // notes = 0;
-                                  int tempNum = 0;
-                                  if (value.isNotEmpty) {
-                                    if (tempNum == 0) {
-                                      tempNum = int.parse(listNotesCal.reversed
-                                          .toList()[index][item]
-                                          .toString());
-                                    } else {
-                                      tempNum = 0;
-                                    }
-                                  }
-
-                                  // debugPrint(tempNum.toString());
-                                  if (value == "") {
-                                    calNum = 0;
-                                    notes = 0;
-                                    setState(() {
-                                      noteCal.reversed.toList()[index][item] =
-                                          "0";
-                                      listNotesCal.reversed.toList()[index]
-                                          [item] = "0";
-                                    });
-                                  } else {
-                                    setState(() {
-                                      noteCal.reversed.toList()[index][item] =
-                                          value;
-                                      listNotesCal.reversed.toList()[index]
-                                          [item] = ((int.parse(value)) *
-                                              int.parse(listNotes.reversed
-                                                  .toList()[index]))
-                                          .toString();
-                                    });
-                                  }
-                                  if (calNum >= 999999999) {
-                                    noteCal.reversed.toList()[index][item] =
-                                        "0";
-                                    listNotesCal.reversed.toList()[index]
-                                        [item] = "0";
-                                    Fluttertoast.showToast(
-                                        msg: "Can Not Be More Than 1 ARAB");
-                                  }
-                                  if (controller.text.isEmpty) {
-                                    setState(() {
-                                      payerString =
-                                          "<--- Enter The Amount Tally Payer";
-                                    });
-                                  } else if (calNum >=
-                                      int.parse(controller.text)) {
-                                    setState(() {
-                                      payerString =
-                                          "Greater By +₹${calNum - int.parse(controller.text)}";
-                                    });
-                                  } else {
-                                    setState(() {
-                                      payerString =
-                                          "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
-                                    });
-                                  }
-                                  print(notes);
-
-                                  // calNum = 0;
-                                  // if (int.parse(value) < tempNum) {
-                                  //   setState(() {
-                                  //     calNum = int.parse(listNotesCal[index]
-                                  //             [item]
-                                  //         .toString());
-                                  //   });
-                                  // } else {
-                                  //   calNum -= tempNum;
-                                  // }
-
-                                  // print("sd" +
-                                  //     listNotesCal[index][item].toString());
-                                },
-
-                                // onChanged: (value) => {
-                                //   listNotesCal.add({
-                                //     "${listNotes.reversed.toList()[index]}":
-                                //         (int.parse(value) *
-                                //                 int.parse(listNotes.reversed
-                                //                     .toList()[index]))
-                                //             .toString()
-                                //   }),
-                                //   listNotesCal[listNotesCal.indexWhere(
-                                //           (element) =>
-                                //               element ==
-                                //               listNotes.reversed
-                                //                   .toList()[index])] =
-                                //       (int.parse(value) *
-                                //               int.parse(listNotes.reversed
-                                //                   .toList()[index]))
-                                //           .toString(),
-                                //   listNotesCal.forEach((element) {
-                                //     print(element[
-                                //         "${listNotes.reversed.toList()[index]}"]);
-                                //   }),
-                                // }
-                                // create setstate for textfield
                               ),
-                            )),
-                        const SizedBox(width: 8),
-                        const Text(
-                          "= ",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  Icon(
+                                    Icons.add_circle,
+                                    size: 30,
+                                    color: Colors.blue,
+                                  ),
+                                  Text("Manually Amount"),
+                                  Icon(
+                                    Icons.remove_circle,
+                                    size: 30,
+                                    color: Colors.blue,
+                                  ),
+                                ]),
+                          ),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.rectangle,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: minusCon,
+                                onChanged: (value) {
+                                  minus = 0;
+                                  setState(() {
+                                    if (value.isEmpty) {
+                                      calNum += minus;
+                                    } else if (int.parse(value) < minus) {
+                                      calNum += minus;
+                                    }
+                                  });
+
+                                  if (value.isEmpty) {
+                                    calNum += minus;
+                                  } else {
+                                    setState(() {
+                                      minus = int.parse(value);
+                                    });
+                                  }
+                                },
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[0-9]"))
+                                ],
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                decoration: const InputDecoration(
+                                  hintText: 'Minus Rs',
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1.0,
+                          ),
                         ),
-                        Text(
-                          listNotesCal.reversed
-                              .toList()[index]
-                                  ["${listNotes.reversed.toList()[index]}"]
-                              .toString(),
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        )
-                      ],
-                    ),
+                        child: TextField(
+                          controller: nameCon,
+                          onChanged: (value) => {
+                            setState(() {
+                              name = value;
+                            })
+                          },
+                          // textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.person),
+                            hintText: 'Person Name',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.rectangle,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: mobCon,
+                                onChanged: (value) => {
+                                  setState(() {
+                                    mobNum = value;
+                                  })
+                                },
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                      RegExp("[0-9]"))
+                                ],
+                                keyboardType: TextInputType.number,
+                                // textAlign: TextAlign.center,
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(Icons.phone),
+                                  hintText: 'Mobile Number',
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 10,
+                          ),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.rectangle,
+                                border: Border.all(
+                                  color: Colors.black,
+                                  width: 1.0,
+                                ),
+                              ),
+                              child: TextField(
+                                controller: acCon,
+                                onChanged: (value) => {
+                                  setState(() {
+                                    ac = value;
+                                  })
+                                },
+                                // textAlign: TextAlign.center,
+                                decoration: const InputDecoration(
+                                  prefixIcon:
+                                      Icon(Icons.account_balance_rounded),
+                                  hintText: 'Acount Number',
+                                  border: InputBorder.none,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.rectangle,
+                          border: Border.all(
+                            color: Colors.black,
+                            width: 1.0,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: remarkCon,
+                          onChanged: (value) => {
+                            setState(() {
+                              remark = value;
+                            })
+                          },
+
+                          // textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                            prefixIcon:
+                                Icon(Icons.mark_unread_chat_alt_rounded),
+                            hintText: 'Remark, Bank, Company, Party, Etc.',
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              },
+                )
+              ],
             ),
           ),
         ]),
       ),
     );
+  }
+
+  PopupMenuButton<Menu> popupMenu() {
+    return PopupMenuButton<Menu>(
+        iconSize: 20,
+        icon: const Icon(
+          Icons.menu,
+          color: Colors.white,
+        ),
+        // Callback that sets the selected popup menu item.
+        onSelected: (Menu item) {
+          setState(() {
+            _selectedMenu = item.name;
+          });
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+              PopupMenuItem<Menu>(
+                value: Menu.itemOne,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.red,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('PDF Receipt'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.itemTwo,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.whatsapp,
+                      color: Colors.green,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Share to watsapp'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.itemTwo,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.copy,
+                      color: Colors.blue[200],
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    const Text('Copy Details'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.itemTwo,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.stars,
+                      color: Color.fromARGB(255, 255, 11, 92),
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Give 5 Star'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                onTap: () {
+                  Future.delayed(
+                      const Duration(seconds: 0), () => newMethod(context));
+                },
+                value: Menu.itemTwo,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.settings,
+                      color: Colors.blue[200],
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    const Text('Settings'),
+                  ],
+                ),
+              ),
+            ]);
   }
 
   Future<dynamic> newMethod(BuildContext context) {
