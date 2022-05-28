@@ -1,15 +1,12 @@
-import 'dart:ui';
-import 'package:date_time_picker/date_time_picker.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:intl/intl.dart';
 
-import 'package:cashcounter/screens/authscreen/login.dart';
-import 'package:cashcounter/widgets/setting.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:keyboard_attachable/keyboard_attachable.dart';
 import 'package:number_to_words_english/number_to_words_english.dart';
+import 'package:omni_datetime_picker/omni_datetime_picker.dart';
 
 class CashCounter extends StatefulWidget {
   const CashCounter({Key? key}) : super(key: key);
@@ -130,6 +127,16 @@ class _CashCounterState extends State<CashCounter> {
   TextEditingController controller = TextEditingController(
     text: '',
   );
+  Map<String, String> weeks = {
+    "Sunday": "रविवार ",
+    "Monday": "सोमवार ",
+    "Tuesday": "मंगलवार ",
+    "Wednesday": "बुधवार ",
+    "Thursday": "गुरुवार ",
+    "Friday": "शुक्रवार ",
+    "Saturday": "शनिवार "
+  };
+  late DateTime date = DateTime.now();
   // @override
   // void setState(VoidCallback fn) {
   //   // TODO: implement setState
@@ -192,17 +199,20 @@ class _CashCounterState extends State<CashCounter> {
     calNum = calNum - minus;
   }
 
+  DateFormat dateFormat = DateFormat("dd/MM/yyyy");
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: BottomAppBar(
         color: Colors.transparent,
         child: SizedBox(
-          height: 100,
+          height: 115,
           child: Column(
             children: [
+              const Divider(),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
                       height: 35,
@@ -218,46 +228,161 @@ class _CashCounterState extends State<CashCounter> {
                         color: Colors.white,
                       )),
                   Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: SizedBox(
-                        height: 45,
-                        child: DateTimePicker(
-                          type: DateTimePickerType.dateTimeSeparate,
-                          dateMask: 'd/M/yyyy',
-                          initialValue: DateTime.now().toString(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          icon: Icon(Icons.history),
-                          dateLabelText: 'Date',
-                          fieldLabelText: "ss",
-                          timeLabelText: "Hour",
-                          use24HourFormat: false,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      flex: 1,
+                      child: Text(
+                          weeks[DateFormat('EEEE').format(date)].toString())),
+                  Expanded(
+                    flex: 3,
+                    child: TextButton(
+                        onPressed: () async {
+                          DateTime? dateTime = await showOmniDateTimePicker(
+                            context: context,
+                            primaryColor: Colors.cyan,
+                            backgroundColor: Colors.blue,
+                            calendarTextColor: Colors.white,
+                            tabTextColor: Colors.white,
+                            unselectedTabBackgroundColor: Colors.grey[700],
+                            buttonTextColor: Colors.white,
+                            timeSpinnerTextStyle: const TextStyle(
+                                color: Colors.white70, fontSize: 18),
+                            timeSpinnerHighlightedTextStyle: const TextStyle(
+                                color: Colors.white, fontSize: 24),
+                            is24HourMode: false,
+                            isShowSeconds: false,
+                            startInitialDate: date,
+                            startFirstDate: DateTime(2020)
+                                .subtract(const Duration(days: 3652)),
+                            startLastDate: DateTime.now().add(
+                              const Duration(days: 3652),
                             ),
-                          ),
-                          selectableDayPredicate: (date) {
-                            // Disable weekend days to select from the calendar
-                            if (date.weekday == 6 || date.weekday == 7) {
-                              return false;
-                            }
+                            borderRadius: const Radius.circular(16),
+                          );
+                          setState(() {
+                            dateTime != null
+                                ? date = dateTime
+                                : date = DateTime.now();
+                          });
 
-                            return true;
-                          },
-                          onChanged: (val) => print(val),
-                          validator: (val) {
-                            print(val);
-                            return null;
-                          },
-                          onSaved: (val) => print(val),
+                          // print(
+                          //     DateFormat('EEEE').format(dateTime!).toString());
+                          // // print(weeks['Saturday']);
+                          // print(weeks[
+                          //     DateFormat('EEEE').format(dateTime).toString()]);
+                          // weeks.forEach((e) => print(e[DateFormat('EEEE')
+                          //     .format(dateTime!)
+                          //     .toString()]));
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              dateFormat.format(date),
+                              style: const TextStyle(color: Colors.blue),
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            const Icon(
+                              Icons.edit,
+                              size: 18,
+                            ),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            Text(DateFormat.jm().format(date).toString()),
+                            const SizedBox(
+                              width: 5,
+                            ),
+                            const Icon(
+                              Icons.edit,
+                              size: 18,
+                            ),
+                          ],
+                        )),
+                  ),
+                  Expanded(
+                      flex: 1,
+                      child: Text(DateFormat('EEEE').format(date).toString()))
+                ],
+              ),
+              const Divider(),
+              SizedBox(
+                height: 30,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                // border: Border.all(color: Colors.blue, width: 1),
+                                color: Colors.red,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
+                              ),
+                              child: const Center(
+                                  child: Text(
+                                "Scr Shot",
+                                style: TextStyle(color: Colors.white),
+                              ))),
                         ),
                       ),
                     ),
-                  )
-                ],
-              ),
+                    Expanded(
+                      flex: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                color: Color.fromARGB(255, 0, 74, 159),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
+                              ),
+                              child: const Center(
+                                  child: Text(
+                                "Income/Expense",
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 12),
+                              ))),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                color: Color.fromARGB(255, 9, 120, 12),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  "Share",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              )),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
             ],
           ),
         ),
@@ -265,7 +390,7 @@ class _CashCounterState extends State<CashCounter> {
       ),
       body: FooterLayout(
         footer: SizedBox(
-          height: 150,
+          height: 145,
           child: Column(
             children: [
               const SizedBox(
@@ -403,78 +528,81 @@ class _CashCounterState extends State<CashCounter> {
                 ],
               ),
               const Divider(),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 5, right: 5),
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16.0)),
-                        child: Container(
-                            padding: const EdgeInsets.only(
-                                left: 10, right: 10, bottom: 8, top: 8),
-                            decoration: const BoxDecoration(
-                              // border: Border.all(color: Colors.blue, width: 1),
-                              color: Colors.red,
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(16.0)),
-                            ),
-                            child: const Center(
-                                child: Text(
-                              "Save Out",
-                              style: TextStyle(color: Colors.white),
-                            ))),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 5, right: 5),
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16.0)),
-                        child: Container(
-                            padding: const EdgeInsets.only(
-                                left: 10, right: 10, bottom: 8, top: 8),
-                            decoration: const BoxDecoration(
-                              color: Color.fromARGB(255, 0, 74, 159),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(16.0)),
-                            ),
-                            child: const Center(
-                                child: Text(
-                              "VIEW",
-                              style: TextStyle(color: Colors.white),
-                            ))),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 5, right: 5),
-                      child: ClipRRect(
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(16.0)),
-                        child: Container(
-                            padding: const EdgeInsets.only(
-                                left: 10, right: 10, bottom: 8, top: 8),
-                            decoration: const BoxDecoration(
-                              color: Color.fromARGB(255, 9, 120, 12),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(16.0)),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                "Save In",
-                                style: TextStyle(color: Colors.white),
+              SizedBox(
+                height: 30,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                // border: Border.all(color: Colors.blue, width: 1),
+                                color: Colors.red,
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
                               ),
-                            )),
+                              child: const Center(
+                                  child: Text(
+                                "Save Out",
+                                style: TextStyle(color: Colors.white),
+                              ))),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                color: Color.fromARGB(255, 0, 74, 159),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
+                              ),
+                              child: const Center(
+                                  child: Text(
+                                "VIEW",
+                                style: TextStyle(color: Colors.white),
+                              ))),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 5, right: 5),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                              padding: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 8, top: 8),
+                              decoration: const BoxDecoration(
+                                color: Color.fromARGB(255, 9, 120, 12),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16.0)),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  "Save In",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              )),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               )
             ],
           ),
@@ -531,7 +659,7 @@ class _CashCounterState extends State<CashCounter> {
                 ListView.builder(
                   reverse: true, // here
                   shrinkWrap: true,
-                  physics: ScrollPhysics(),
+                  physics: const ScrollPhysics(),
 
                   itemCount: listNotes.length,
                   itemBuilder: (BuildContext context, int index) {
@@ -541,11 +669,11 @@ class _CashCounterState extends State<CashCounter> {
                     return Container(
                       color: Colors.amber,
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.only(left: 8, right: 8),
                         child: Row(
                           children: [
                             Image.asset('assets/notes/${index + 1}.jpg',
-                                height: 50),
+                                height: 40),
                             // SizedBox(width: 10),
                             SizedBox(
                               width: 50,
@@ -565,137 +693,143 @@ class _CashCounterState extends State<CashCounter> {
                               ),
                             ),
                             const SizedBox(width: 10),
-                            SizedBox(
-                                width: 60,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.rectangle,
-                                    border: Border.all(
-                                      color: Colors.black,
-                                      width: 1.0,
+                            Padding(
+                              padding: const EdgeInsets.all(1),
+                              child: SizedBox(
+                                  height: 45,
+                                  width: 60,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.rectangle,
+                                      border: Border.all(
+                                        color: Colors.black,
+                                        width: 1.0,
+                                      ),
                                     ),
-                                  ),
-                                  child: TextField(
-                                    controller: _controllers[index],
-                                    inputFormatters: [
-                                      FilteringTextInputFormatter.allow(
-                                          RegExp("[0-9]"))
-                                    ],
+                                    child: TextField(
+                                      controller: _controllers[index],
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(
+                                            RegExp("[0-9]"))
+                                      ],
 
-                                    keyboardType: TextInputType.number,
-                                    textAlign: TextAlign.center,
-                                    decoration: const InputDecoration(
-                                      hintText: '0',
-                                      border: InputBorder.none,
-                                    ),
-                                    onChanged: (String value) {
-                                      // notes = 0;
-                                      int tempNum = 0;
-                                      if (value.isNotEmpty) {
-                                        if (tempNum == 0) {
-                                          tempNum = int.parse(listNotesCal
-                                              .reversed
-                                              .toList()[index][item]
-                                              .toString());
-                                        } else {
-                                          tempNum = 0;
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      decoration: const InputDecoration(
+                                        hintText: '0',
+                                        border: InputBorder.none,
+                                      ),
+                                      onChanged: (String value) {
+                                        // notes = 0;
+                                        int tempNum = 0;
+                                        if (value.isNotEmpty) {
+                                          if (tempNum == 0) {
+                                            tempNum = int.parse(listNotesCal
+                                                .reversed
+                                                .toList()[index][item]
+                                                .toString());
+                                          } else {
+                                            tempNum = 0;
+                                          }
                                         }
-                                      }
 
-                                      // debugPrint(tempNum.toString());
-                                      if (value == "") {
-                                        calNum = 0;
-                                        notes = 0;
-                                        setState(() {
+                                        // debugPrint(tempNum.toString());
+                                        if (value == "") {
+                                          calNum = 0;
+                                          notes = 0;
+                                          setState(() {
+                                            noteCal.reversed.toList()[index]
+                                                [item] = "0";
+                                            listNotesCal.reversed
+                                                .toList()[index][item] = "0";
+                                          });
+                                        } else {
+                                          setState(() {
+                                            noteCal.reversed.toList()[index]
+                                                [item] = value;
+                                            listNotesCal.reversed
+                                                    .toList()[index]
+                                                [item] = ((int.parse(value)) *
+                                                    int.parse(listNotes.reversed
+                                                        .toList()[index]))
+                                                .toString();
+                                          });
+                                        }
+                                        if (calNum >= 999999999) {
                                           noteCal.reversed.toList()[index]
                                               [item] = "0";
                                           listNotesCal.reversed.toList()[index]
                                               [item] = "0";
-                                        });
-                                      } else {
-                                        setState(() {
-                                          noteCal.reversed.toList()[index]
-                                              [item] = value;
-                                          listNotesCal.reversed.toList()[index]
-                                              [item] = ((int.parse(value)) *
-                                                  int.parse(listNotes.reversed
-                                                      .toList()[index]))
-                                              .toString();
-                                        });
-                                      }
-                                      if (calNum >= 999999999) {
-                                        noteCal.reversed.toList()[index][item] =
-                                            "0";
-                                        listNotesCal.reversed.toList()[index]
-                                            [item] = "0";
-                                        Fluttertoast.showToast(
-                                            msg: "Can Not Be More Than 1 ARAB");
-                                      }
-                                      if (controller.text.isEmpty) {
-                                        setState(() {
-                                          payerString =
-                                              "<--- Enter The Amount Tally Payer";
-                                        });
-                                      } else if (calNum >
-                                          int.parse(controller.text)) {
-                                        setState(() {
-                                          payerString =
-                                              "Greater By +₹${calNum - int.parse(controller.text)}";
-                                        });
-                                      } else if (calNum ==
-                                          int.parse(controller.text)) {
-                                        setState(() {
-                                          payerString =
-                                              "Matched Success To Payer ✅";
-                                        });
-                                      } else {
-                                        setState(() {
-                                          payerString =
-                                              "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
-                                        });
-                                      }
-                                      print(notes);
+                                          Fluttertoast.showToast(
+                                              msg:
+                                                  "Can Not Be More Than 1 ARAB");
+                                        }
+                                        if (controller.text.isEmpty) {
+                                          setState(() {
+                                            payerString =
+                                                "<--- Enter The Amount Tally Payer";
+                                          });
+                                        } else if (calNum >
+                                            int.parse(controller.text)) {
+                                          setState(() {
+                                            payerString =
+                                                "Greater By +₹${calNum - int.parse(controller.text)}";
+                                          });
+                                        } else if (calNum ==
+                                            int.parse(controller.text)) {
+                                          setState(() {
+                                            payerString =
+                                                "Matched Success To Payer ✅";
+                                          });
+                                        } else {
+                                          setState(() {
+                                            payerString =
+                                                "Less By -₹${(calNum - int.parse(controller.text)).abs()}";
+                                          });
+                                        }
+                                        print(notes);
 
-                                      // calNum = 0;
-                                      // if (int.parse(value) < tempNum) {
-                                      //   setState(() {
-                                      //     calNum = int.parse(listNotesCal[index]
-                                      //             [item]
-                                      //         .toString());
-                                      //   });
-                                      // } else {
-                                      //   calNum -= tempNum;
+                                        // calNum = 0;
+                                        // if (int.parse(value) < tempNum) {
+                                        //   setState(() {
+                                        //     calNum = int.parse(listNotesCal[index]
+                                        //             [item]
+                                        //         .toString());
+                                        //   });
+                                        // } else {
+                                        //   calNum -= tempNum;
+                                        // }
+
+                                        // print("sd" +
+                                        //     listNotesCal[index][item].toString());
+                                      },
+
+                                      // onChanged: (value) => {
+                                      //   listNotesCal.add({
+                                      //     "${listNotes.reversed.toList()[index]}":
+                                      //         (int.parse(value) *
+                                      //                 int.parse(listNotes.reversed
+                                      //                     .toList()[index]))
+                                      //             .toString()
+                                      //   }),
+                                      //   listNotesCal[listNotesCal.indexWhere(
+                                      //           (element) =>
+                                      //               element ==
+                                      //               listNotes.reversed
+                                      //                   .toList()[index])] =
+                                      //       (int.parse(value) *
+                                      //               int.parse(listNotes.reversed
+                                      //                   .toList()[index]))
+                                      //           .toString(),
+                                      //   listNotesCal.forEach((element) {
+                                      //     print(element[
+                                      //         "${listNotes.reversed.toList()[index]}"]);
+                                      //   }),
                                       // }
-
-                                      // print("sd" +
-                                      //     listNotesCal[index][item].toString());
-                                    },
-
-                                    // onChanged: (value) => {
-                                    //   listNotesCal.add({
-                                    //     "${listNotes.reversed.toList()[index]}":
-                                    //         (int.parse(value) *
-                                    //                 int.parse(listNotes.reversed
-                                    //                     .toList()[index]))
-                                    //             .toString()
-                                    //   }),
-                                    //   listNotesCal[listNotesCal.indexWhere(
-                                    //           (element) =>
-                                    //               element ==
-                                    //               listNotes.reversed
-                                    //                   .toList()[index])] =
-                                    //       (int.parse(value) *
-                                    //               int.parse(listNotes.reversed
-                                    //                   .toList()[index]))
-                                    //           .toString(),
-                                    //   listNotesCal.forEach((element) {
-                                    //     print(element[
-                                    //         "${listNotes.reversed.toList()[index]}"]);
-                                    //   }),
-                                    // }
-                                    // create setstate for textfield
-                                  ),
-                                )),
+                                      // create setstate for textfield
+                                    ),
+                                  )),
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               "= ",
