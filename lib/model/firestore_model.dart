@@ -6,3 +6,12 @@ class Userdata {
     this.email,
   ); // Movie constructor that initializes the class fields
 }
+
+class Udhar {
+  late String name, email;
+
+  Udhar(
+    this.name,
+    this.email,
+  ); // Movie constructor that initializes the class fields
+}

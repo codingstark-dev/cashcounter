@@ -1,21 +1,33 @@
+import 'dart:ui';
+import 'package:cashcounter/screens/udhar_page.dart';
+import 'package:intl/intl.dart';
+
+import 'package:cashcounter/provider/firestore_provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math' as math;
 
 import 'package:fluttercontactpicker/fluttercontactpicker.dart';
 
-class Credit extends StatefulWidget {
+class Credit extends ConsumerStatefulWidget {
   Credit({Key? key}) : super(key: key);
 
   @override
-  State<Credit> createState() => _CreditState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _CreditState();
+//
+  // @override
+  // State<Credit> createState() => CreditState();
 }
 
-class _CreditState extends State<Credit> {
+class _CreditState extends ConsumerState<Credit> {
   TextEditingController phoneController = TextEditingController();
   TextEditingController nameController = TextEditingController();
+  DateFormat dateFormat = DateFormat("dd/MM/yyyy");
 
   @override
   Widget build(BuildContext context) {
+    final database = ref.read(databaseProvider);
     return Scaffold(
       bottomNavigationBar: Container(
         // create box decoration
@@ -194,7 +206,20 @@ class _CreditState extends State<Credit> {
                                           Expanded(
                                             flex: 1,
                                             child: IconButton(
-                                              onPressed: () {},
+                                              onPressed: () {
+                                                database
+                                                    .createUdharAccount(
+                                                  phoneController.text,
+                                                  nameController.text,
+                                                )
+                                                    .whenComplete(() {
+                                                  setState(() {
+                                                    nameController.clear();
+                                                    phoneController.clear();
+                                                  });
+                                                  Navigator.pop(context);
+                                                });
+                                              },
                                               iconSize: 32,
                                               color: Colors.green[800],
                                               icon: Icon(Icons.check_box),
@@ -275,117 +300,150 @@ class _CreditState extends State<Credit> {
           ),
           //create listtile and circular alphabets for each person
           Expanded(
-            child: ListView.separated(
-              separatorBuilder: (context, index) => const Divider(),
-              itemCount: 10,
-              itemBuilder: (BuildContext context, int index) {
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: const Text(
-                      "A",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20),
-                    ),
-                    backgroundColor:
-                        Color((math.Random().nextDouble() * 0xFFFFFF).toInt())
-                            .withOpacity(1.0),
-                  ),
-                  title: const Text(
-                    "Person Name",
-                    style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
-                  subtitle: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          width: 90,
-                          child: Column(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: database.udharDetail,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  print(snapshot.data?.docs.length);
+                  if (snapshot.data?.docs.length == 0) {
+                    return const Center(
+                      child: Text(
+                        "Person Not Added..! \n\n First, Add Person",
+                        style: TextStyle(color: Colors.grey, fontSize: 20),
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final Map<String, dynamic> data =
+                          snapshot.data!.docs[index].data();
+                      print(data['name']);
+                      return ListTile(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => UdharPage(
+                                        data: data,
+                                      )));
+                        },
+                        leading: CircleAvatar(
+                          child: Text(
+                            data['name'][0].toUpperCase(),
+                            style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20),
+                          ),
+                          backgroundColor: Color(
+                                  (math.Random().nextDouble() * 0xFFFFFF)
+                                      .toInt())
+                              .withOpacity(1.0),
+                        ),
+                        title: Text(
+                          data['name'],
+                          style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16),
+                        ),
+                        subtitle: IntrinsicHeight(
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              const Text(
-                                "Cr. 0",
-                                style: TextStyle(
-                                    color: Colors.green,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12),
+                              SizedBox(
+                                width: 90,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Cr. 0",
+                                      style: TextStyle(
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12),
+                                    ),
+                                    const Text(
+                                      "Dr. 00",
+                                      style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const Text(
-                                "Dr. 00",
-                                style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12),
+                              const VerticalDivider(
+                                color: Colors.grey,
                               ),
+                              Column(
+                                children: [
+                                  Text(
+                                    dateFormat.format(data['date'].toDate()),
+                                    style: TextStyle(
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                  Text(
+                                    DateFormat.jm()
+                                        .format(data['date'].toDate())
+                                        .toString(),
+                                    style: TextStyle(
+                                        color: Colors.grey,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                              const VerticalDivider(color: Colors.grey),
                             ],
                           ),
                         ),
-                        const VerticalDivider(
-                          color: Colors.grey,
-                        ),
-                        Column(
+                        trailing: Column(
                           children: [
-                            const Text(
-                              "26/02/2020",
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12),
+                            Expanded(
+                              child: IconButton(
+                                  icon: const Icon(Icons.phone_forwarded),
+                                  iconSize: 20,
+                                  color: Colors.green,
+                                  onPressed: () {
+                                    showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: const Text("Options"),
+                                            content:
+                                                const Text("Select an option"),
+                                            actions: [
+                                              TextButton(
+                                                child: const Text("Edit"),
+                                                onPressed: () {},
+                                              ),
+                                              TextButton(
+                                                child: const Text("Delete"),
+                                                onPressed: () {},
+                                              ),
+                                            ],
+                                          );
+                                        });
+                                  }),
                             ),
-                            const Text(
-                              "04:00 PM",
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12),
-                            ),
+                            Spacer(),
+                            Expanded(child: const Text("0"))
                           ],
                         ),
-                        const VerticalDivider(color: Colors.grey),
-                      ],
-                    ),
-                  ),
-                  trailing: Column(
-                    children: [
-                      Expanded(
-                        child: IconButton(
-                            icon: const Icon(Icons.phone_forwarded),
-                            iconSize: 20,
-                            color: Colors.green,
-                            onPressed: () {
-                              showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: const Text("Options"),
-                                      content: const Text("Select an option"),
-                                      actions: [
-                                        TextButton(
-                                          child: const Text("Edit"),
-                                          onPressed: () {},
-                                        ),
-                                        TextButton(
-                                          child: const Text("Delete"),
-                                          onPressed: () {},
-                                        ),
-                                      ],
-                                    );
-                                  });
-                            }),
-                      ),
-                      Spacer(),
-                      Expanded(child: const Text("0"))
-                    ],
-                  ),
-                );
-              },
-            ),
+                      );
+                    },
+                  );
+                }),
           ),
         ],
       ),

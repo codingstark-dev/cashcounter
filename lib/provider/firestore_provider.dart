@@ -3,8 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:uuid/uuid.dart';
 
 class Database {
+  var uuid = const Uuid();
+
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
   FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -18,6 +21,11 @@ class Database {
       .snapshots(); // a stream that is continuously listening for changes happening in the database
   Stream<DocumentSnapshot<Map<String, dynamic>>> get getUserDetail =>
       _firestore.collection("users").doc(_auth.currentUser?.uid).snapshots();
+  Stream<QuerySnapshot<Map<String, dynamic>>> get udharDetail => _firestore
+      .collection("users")
+      .doc(_auth.currentUser?.uid)
+      .collection("udhar")
+      .snapshots();
   // Add a Movie
   // A method that will add a new Movie m to our Movies collection and return true if its successful.
   // Future<bool> addNewMovie(Movie m) async {
@@ -72,6 +80,30 @@ class Database {
     try {
       await _gst.doc(_auth.currentUser?.uid).update(gst);
       Fluttertoast.showToast(msg: "Updated");
+      // update the document with id of movieId from our movies collection
+      return true; // return true after successful update .
+    } catch (e) {
+      print(e);
+      return Future.error(e); // return error
+    }
+  }
+
+  //create udhar account for user
+  Future createUdharAccount(number, name) async {
+    var v1 = uuid.v1();
+    var udhar = _firestore.collection('users');
+    try {
+      await udhar.doc(_auth.currentUser?.uid).collection("udhar").doc(v1).set({
+        "credit": 0,
+        "debit": 0,
+        "date": DateTime.now(),
+        "blance": 0,
+        "name": name,
+        "number": number,
+        "useruid": _auth.currentUser?.uid,
+        "uuid": v1
+      });
+      Fluttertoast.showToast(msg: "Udhar Account Created");
       // update the document with id of movieId from our movies collection
       return true; // return true after successful update .
     } catch (e) {
