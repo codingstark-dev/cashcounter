@@ -231,16 +231,6 @@ class _CreditState extends ConsumerState<Credit> {
                                   ],
                                 ),
                               ),
-                              actions: [
-                                TextButton(
-                                  child: const Text("Edit"),
-                                  onPressed: () {},
-                                ),
-                                TextButton(
-                                  child: const Text("Delete"),
-                                  onPressed: () {},
-                                ),
-                              ],
                             );
                           });
                     },
