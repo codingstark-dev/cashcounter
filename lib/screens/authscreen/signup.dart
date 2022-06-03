@@ -4,7 +4,9 @@ import 'package:cashcounter/provider/firestore_provider.dart';
 import 'package:cashcounter/screens/authscreen/login.dart';
 import 'package:cashcounter/screens/home.dart';
 import 'package:cashcounter/service/auth_service.dart';
+import 'package:firebase_phone_auth_handler/firebase_phone_auth_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -19,12 +21,92 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   Widget currentPage = const SignUpPage();
+
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  TextEditingController phoneNumber = TextEditingController();
+  TextEditingController otpCode = TextEditingController();
+  bool isLoading = false;
+
+  String? verificationId;
   @override
   void initState() {
     super.initState();
     // checkLogin();
   }
 
+  FirebaseAuth _auth = FirebaseAuth.instance;
+
+  Future<void> phoneSignIn({required String phoneNumber}) async {
+    await _auth.verifyPhoneNumber(
+        phoneNumber: "+91" + phoneNumber,
+        verificationCompleted: _onVerificationCompleted,
+        verificationFailed: _onVerificationFailed,
+        codeSent: _onCodeSent,
+        codeAutoRetrievalTimeout: _onCodeTimeout,
+        timeout: Duration(seconds: 120));
+  }
+
+  _onVerificationCompleted(PhoneAuthCredential authCredential) async {
+    print("verification completed ${authCredential.smsCode}");
+    User? user = FirebaseAuth.instance.currentUser;
+    setState(() {
+      this.otpCode.text = authCredential.smsCode!;
+    });
+    if (authCredential.smsCode != null) {
+      try {
+        UserCredential credential =
+            await user!.linkWithCredential(authCredential);
+      } on FirebaseAuthException catch (e) {
+        if (e.code == 'provider-already-linked') {
+          await _auth.signInWithCredential(authCredential);
+        }
+      }
+      setState(() {
+        isLoading = false;
+      });
+      // Navigator.pushNamedAndRemoveUntil(
+      //     context, Constants.homeNavigate, (route) => false);
+    }
+  }
+
+  _onVerificationFailed(FirebaseAuthException exception) {
+    if (exception.code == 'invalid-phone-number') {
+      showMessage("The phone number entered is invalid!");
+    }
+  }
+
+  _onCodeSent(String verificationId, int? forceResendingToken) {
+    this.verificationId = verificationId;
+    print(forceResendingToken);
+    print("code sent");
+  }
+
+  _onCodeTimeout(String timeout) {
+    return null;
+  }
+
+  void showMessage(String errorMessage) {
+    showDialog(
+        context: context,
+        builder: (BuildContext builderContext) {
+          return AlertDialog(
+            title: Text("Error"),
+            content: Text(errorMessage),
+            actions: [
+              TextButton(
+                child: Text("Ok"),
+                onPressed: () async {
+                  Navigator.of(builderContext).pop();
+                },
+              )
+            ],
+          );
+        }).then((value) {
+      setState(() {
+        isLoading = false;
+      });
+    });
+  }
   // void checkLogin() async {
   //   String? token = await authClass.getToken();
   //   if (token != null) {
@@ -87,47 +169,72 @@ class _SignUpPageState extends State<SignUpPage> {
                   const SizedBox(
                     height: 10,
                   ),
-                  textItem("Email", _emailController, false),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  textItem("Password", _passwordController, true),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  colorButton("Sign Up"),
-                  const SizedBox(
-                    height: 15,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Text(
-                        "If you already have an Account ?",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        textItem(
+                            "Number",
+                            phoneNumber,
+                            false,
+                            [
+                              FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                            ],
+                            TextInputType.number),
+                        const SizedBox(
+                          height: 15,
                         ),
-                      ),
-                      InkWell(
-                        onTap: () {
-                          Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (builder) => const SignInPage()),
-                              (route) => false);
-                        },
-                        child: const Text(
-                          " Login",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
+                        textItem(
+                            "otp",
+                            otpCode,
+                            false,
+                            [
+                              FilteringTextInputFormatter.allow(RegExp("[0-9]"))
+                            ],
+                            TextInputType.number),
+                        const SizedBox(
+                          height: 15,
                         ),
-                      ),
-                    ],
+                        // textItem("Password", _passwordController, true, null, null),
+                        // const SizedBox(
+                        //   height: 15,
+                        // ),
+                        colorButton("Send Otp"),
+                      ],
+                    ),
                   ),
+                  const SizedBox(
+                    height: 15,
+                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.center,
+                  //   children: <Widget>[
+                  //     const Text(
+                  //       "If you already have an Account ?",
+                  //       style: TextStyle(
+                  //         color: Colors.white,
+                  //         fontSize: 18,
+                  //       ),
+                  //     ),
+                  //     InkWell(
+                  //       onTap: () {
+                  //         Navigator.pushAndRemoveUntil(
+                  //             context,
+                  //             MaterialPageRoute(
+                  //                 builder: (builder) => const SignInPage()),
+                  //             (route) => false);
+                  //       },
+                  //       child: const Text(
+                  //         " Login",
+                  //         style: TextStyle(
+                  //           fontWeight: FontWeight.bold,
+                  //           color: Colors.white,
+                  //           fontSize: 18,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ],
               ),
             ),
@@ -179,13 +286,19 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Widget textItem(
-      String name, TextEditingController controller, bool obsecureText) {
+      String name,
+      TextEditingController controller,
+      bool obsecureText,
+      List<TextInputFormatter>? textformatter,
+      TextInputType? keyboardType) {
     return Container(
       width: MediaQuery.of(context).size.width - 70,
       height: 55,
       child: TextFormField(
         controller: controller,
         obscureText: obsecureText,
+        inputFormatters: textformatter,
+        keyboardType: keyboardType,
         style: const TextStyle(
           fontSize: 17,
           color: Colors.white,
@@ -220,29 +333,35 @@ class _SignUpPageState extends State<SignUpPage> {
   ) {
     return InkWell(
       onTap: () async {
-        setState(() {
-          circular = true;
-        });
-        try {
-          firebase_auth.UserCredential userCredential =
-              await firebaseAuth.createUserWithEmailAndPassword(
-                  email: _emailController.text,
-                  password: _passwordController.text);
-          print(userCredential.user?.email);
+        if (_formKey.currentState!.validate()) {
           setState(() {
-            circular = false;
+            isLoading = true;
           });
-          Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (builder) => const Home()),
-              (route) => false);
-        } catch (e) {
-          final snackbar = SnackBar(content: Text(e.toString()));
-          ScaffoldMessenger.of(context).showSnackBar(snackbar);
-          setState(() {
-            circular = false;
-          });
+          await phoneSignIn(phoneNumber: phoneNumber.text);
         }
+        // setState(() {
+        //   circular = true;
+        // });
+        // try {
+        //   firebase_auth.UserCredential userCredential =
+        //       await firebaseAuth.createUserWithEmailAndPassword(
+        //           email: _emailController.text,
+        //           password: _passwordController.text);
+        //   print(userCredential.user?.email);
+        //   setState(() {
+        //     circular = false;
+        //   });
+        //   Navigator.pushAndRemoveUntil(
+        //       context,
+        //       MaterialPageRoute(builder: (builder) => const Home()),
+        //       (route) => false);
+        // } catch (e) {
+        //   final snackbar = SnackBar(content: Text(e.toString()));
+        //   ScaffoldMessenger.of(context).showSnackBar(snackbar);
+        //   setState(() {
+        //     circular = false;
+        //   });
+        // }
       },
       child: Container(
         width: MediaQuery.of(context).size.width - 90,

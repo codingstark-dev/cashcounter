@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:cashcounter/screens/udhar_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import 'package:cashcounter/provider/firestore_provider.dart';
@@ -24,6 +25,40 @@ class _CreditState extends ConsumerState<Credit> {
   TextEditingController phoneController = TextEditingController();
   TextEditingController nameController = TextEditingController();
   DateFormat dateFormat = DateFormat("dd/MM/yyyy");
+  FirebaseAuth _auth = FirebaseAuth.instance;
+  NumberFormat numberFormat = NumberFormat.decimalPattern('hi');
+
+  FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  num sum = 0;
+  num cr = 0;
+  num dr = 0;
+
+  String search = "";
+  @override
+  void initState() {
+    super.initState();
+    _firestore
+        .collection("users")
+        .doc(_auth.currentUser?.uid)
+        .collection("udhar")
+        .snapshots()
+        .listen((event) {
+      sum = 0;
+      cr = 0;
+      dr = 0;
+      for (var element in event.docs) {
+        if (mounted) {
+          setState(() {
+            cr += element.data()['credit'];
+
+            dr += element.data()['debit'];
+
+            sum += element.data()['closebalance'];
+          });
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +87,8 @@ class _CreditState extends ConsumerState<Credit> {
               flex: 4,
               child: Column(
                 children: [
-                  const Text(
-                    "Total: 4444",
+                  Text(
+                    "Total:  ₹${numberFormat.format(sum)}",
                     style: TextStyle(
                         color: Color.fromARGB(255, 8, 95, 11),
                         fontWeight: FontWeight.bold),
@@ -67,16 +102,16 @@ class _CreditState extends ConsumerState<Credit> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: const [
+                      children: [
                         Text(
-                          "cr2232",
+                          "Dr. ₹${numberFormat.format(cr)}",
                           style: TextStyle(
                               color: Color.fromARGB(255, 8, 95, 11),
                               fontWeight: FontWeight.bold),
                         ),
                         VerticalDivider(color: Colors.black),
                         Text(
-                          "dr2232",
+                          "Dr. ₹${numberFormat.format(dr)}",
                           style: TextStyle(
                               color: Color.fromARGB(255, 236, 30, 30),
                               fontWeight: FontWeight.bold),
@@ -150,8 +185,7 @@ class _CreditState extends ConsumerState<Credit> {
                                                   final PhoneContact contact =
                                                       await FlutterContactPicker
                                                           .pickPhoneContact();
-                                                  print(contact
-                                                      .phoneNumber!.number);
+
                                                   setState(() {
                                                     nameController.text =
                                                         contact.fullName
@@ -268,7 +302,14 @@ class _CreditState extends ConsumerState<Credit> {
                   child: Container(
                     height: 40,
                     child: TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          search = value;
+                        });
+                      },
                       decoration: InputDecoration(
+                        contentPadding: EdgeInsets.only(
+                            bottom: 0, right: 0, left: 10, top: 0),
                         hintText: 'Search',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -291,15 +332,30 @@ class _CreditState extends ConsumerState<Credit> {
           //create listtile and circular alphabets for each person
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: database.udharDetail,
+                stream: (search == "")
+                    ? database.udharDetail
+                    : _firestore
+                        .collection("users")
+                        .doc(_auth.currentUser!.uid)
+                        .collection("udhar")
+                        .where("caseNumber",
+                            arrayContains: search.toLowerCase())
+                        .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
-                  print(snapshot.data?.docs.length);
-                  if (snapshot.data?.docs.length == 0) {
+                  if ((search != "") && snapshot.data!.docs.length == 0) {
+                    return const Center(
+                      child: Text(
+                        "No Person found",
+                        style: TextStyle(color: Colors.grey, fontSize: 20),
+                      ),
+                    );
+                  }
+                  if (snapshot.data!.docs.isEmpty) {
                     return const Center(
                       child: Text(
                         "Person Not Added..! \n\n First, Add Person",
@@ -313,14 +369,18 @@ class _CreditState extends ConsumerState<Credit> {
                     itemBuilder: (BuildContext context, int index) {
                       final Map<String, dynamic> data =
                           snapshot.data!.docs[index].data();
-                      print(data['name']);
+
                       return ListTile(
                         onTap: () {
+                          database.sum = 0;
                           Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (context) => UdharPage(
                                         data: data,
+                                        currentUid: snapshot
+                                            .data?.docs[index].id
+                                            .toString(),
                                       )));
                         },
                         leading: CircleAvatar(
@@ -353,15 +413,15 @@ class _CreditState extends ConsumerState<Credit> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      "Cr. 0",
+                                    Text(
+                                      "Cr. ₹${numberFormat.format(data['credit'])}",
                                       style: TextStyle(
                                           color: Colors.green,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12),
                                     ),
-                                    const Text(
-                                      "Dr. 00",
+                                    Text(
+                                      "Dr. ₹${numberFormat.format(data['debit'])}",
                                       style: TextStyle(
                                           color: Colors.red,
                                           fontWeight: FontWeight.bold,
@@ -380,7 +440,7 @@ class _CreditState extends ConsumerState<Credit> {
                                     style: TextStyle(
                                         color: Colors.grey,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 12),
+                                        fontSize: 10),
                                   ),
                                   Text(
                                     DateFormat.jm()
@@ -389,7 +449,7 @@ class _CreditState extends ConsumerState<Credit> {
                                     style: TextStyle(
                                         color: Colors.grey,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 12),
+                                        fontSize: 10),
                                   ),
                                 ],
                               ),
@@ -427,7 +487,9 @@ class _CreditState extends ConsumerState<Credit> {
                                   }),
                             ),
                             Spacer(),
-                            Expanded(child: const Text("0"))
+                            Expanded(
+                                child: Text(
+                                    "₹${numberFormat.format(data['closebalance'])}")),
                           ],
                         ),
                       );
