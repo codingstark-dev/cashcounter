@@ -33,14 +33,14 @@ class Authentication {
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Error Occured'),
+          title: const Text('Error Occured'),
           content: Text(e.toString()),
           actions: [
             TextButton(
                 onPressed: () {
                   Navigator.of(ctx).pop();
                 },
-                child: Text("OK"))
+                child: const Text("OK"))
           ],
         ),
       );

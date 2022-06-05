@@ -11,6 +11,8 @@ import 'dart:math' as math;
 
 import 'package:fluttercontactpicker/fluttercontactpicker.dart';
 
+enum Menu { atoz, debit, credit, time }
+
 class Credit extends ConsumerStatefulWidget {
   Credit({Key? key}) : super(key: key);
 
@@ -27,7 +29,9 @@ class _CreditState extends ConsumerState<Credit> {
   DateFormat dateFormat = DateFormat("dd/MM/yyyy");
   FirebaseAuth _auth = FirebaseAuth.instance;
   NumberFormat numberFormat = NumberFormat.decimalPattern('hi');
+  String? selectedValue;
 
+  String _selectedMenu = "time";
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
   num sum = 0;
   num cr = 0;
@@ -90,7 +94,11 @@ class _CreditState extends ConsumerState<Credit> {
                   Text(
                     "Total:  ₹${numberFormat.format(sum)}",
                     style: TextStyle(
-                        color: Color.fromARGB(255, 8, 95, 11),
+                        color: (sum == 0)
+                            ? Colors.black
+                            : (sum.toString().contains("-"))
+                                ? Colors.red[900]
+                                : Color.fromARGB(255, 8, 95, 11),
                         fontWeight: FontWeight.bold),
                   ),
                   const Padding(
@@ -318,8 +326,9 @@ class _CreditState extends ConsumerState<Credit> {
                     ),
                   ),
                 ),
-                IconButton(
-                    onPressed: () {}, icon: const Icon(Icons.filter_alt)),
+                popupMenu(database),
+                // IconButton(
+                //     onPressed: () {}, icon: const Icon(Icons.filter_alt)),
                 IconButton(
                     onPressed: () {}, icon: const Icon(Icons.picture_as_pdf)),
                 IconButton(onPressed: () {}, icon: const Icon(Icons.menu)),
@@ -333,7 +342,7 @@ class _CreditState extends ConsumerState<Credit> {
           Expanded(
             child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: (search == "")
-                    ? database.udharDetail
+                    ? database.udharDetail(_selectedMenu)
                     : _firestore
                         .collection("users")
                         .doc(_auth.currentUser!.uid)
@@ -372,7 +381,6 @@ class _CreditState extends ConsumerState<Credit> {
 
                       return ListTile(
                         onTap: () {
-                          database.sum = 0;
                           Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -489,7 +497,16 @@ class _CreditState extends ConsumerState<Credit> {
                             Spacer(),
                             Expanded(
                                 child: Text(
-                                    "₹${numberFormat.format(data['closebalance'])}")),
+                              "₹${numberFormat.format(data['closebalance'])}",
+                              style: TextStyle(
+                                  color: (data['closebalance'] == 0)
+                                      ? Colors.black
+                                      : (data['closebalance']
+                                              .toString()
+                                              .contains("-"))
+                                          ? Colors.red[900]
+                                          : Colors.green),
+                            )),
                           ],
                         ),
                       );
@@ -500,5 +517,87 @@ class _CreditState extends ConsumerState<Credit> {
         ],
       ),
     );
+  }
+
+  PopupMenuButton<Menu> popupMenu(Database database) {
+    return PopupMenuButton<Menu>(
+        icon: const Icon(
+          Icons.filter_alt,
+          color: Colors.black,
+        ),
+        // Callback that sets the selected popup menu item.
+        onSelected: (Menu item) {
+          setState(() {
+            _selectedMenu = item.name;
+          });
+          print("Selected menu ${item.name}");
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+              PopupMenuItem<Menu>(
+                value: Menu.atoz,
+                // onTap: () {
+                //   setState(() {
+                //     _selectedMenu = Menu.atoz.name;
+                //   });
+                // },
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.motion_photos_auto,
+                      color: Colors.blue,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('A to Z Wise'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.debit,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.remove_circle,
+                      color: Colors.red,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Debtor Person'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.credit,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.add_circle,
+                      color: Colors.green,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Creditor Person'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.time,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.change_circle,
+                      color: Colors.cyan,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Time Wise (default)'),
+                  ],
+                ),
+              ),
+            ]);
   }
 }

@@ -368,12 +368,18 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                         database.sum += maindata["amount"];
                         if (maindata['type'] == 'credit') {
                           return getReceiverView(
-                              ChatBubbleClipper5(type: BubbleType.sendBubble),
-                              context,
-                              maindata['amount'],
-                              maindata['remark'],
-                              maindata['closebalance'],
-                              maindata['date'].toDate());
+                              clipper: ChatBubbleClipper5(
+                                  type: BubbleType.sendBubble),
+                              context: context,
+                              Amount: maindata['amount'],
+                              remark: maindata['remark'],
+                              closingBalance: maindata['closebalance'],
+                              date: maindata['date'].toDate(),
+                              indexuid: snapshot.data!.docs[index].id,
+                              database: database,
+                              name: maindata['name'],
+                              number: maindata['number'],
+                              type: maindata['type']);
                         } else if (maindata['type'] == 'debit') {
                           return getSenderView(
                               ChatBubbleClipper5(
@@ -473,6 +479,12 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                               child: SizedBox(
                                 height: 40,
                                 child: TextField(
+                                  minLines: null,
+                                  textInputAction: TextInputAction.newline,
+                                  keyboardType: TextInputType.multiline,
+                                  maxLines: null,
+                                  expands: true,
+                                  // maxLength: 50,
                                   controller: remarkController,
                                   textAlign: TextAlign.center,
                                   decoration: InputDecoration(
@@ -603,6 +615,249 @@ class _UdharPageState extends ConsumerState<UdharPage> {
         });
   }
 
+  updatecreditndDebitDialog(
+      BuildContext context,
+      Database database,
+      String text,
+      bool minus,
+      String type,
+      docuid,
+      closingBalance,
+      amount) async {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return StatefulBuilder(
+            builder: (BuildContext context,
+                    void Function(void Function()) setState) =>
+                AlertDialog(
+              title: Center(child: Text(text)),
+              content: SizedBox(
+                height: 100,
+                child: Column(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(child: Icon(Icons.payments)),
+                          Expanded(
+                              flex: 4,
+                              child: SizedBox(
+                                height: 40,
+                                child: TextField(
+                                  controller: amountController,
+
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp("[0-9]"))
+                                  ],
+
+                                  keyboardType: TextInputType.number,
+                                  // controller:
+                                  //     nameController,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    prefixIcon: Icon(
+                                      Icons.currency_rupee,
+                                    ),
+                                    prefixIconConstraints: BoxConstraints(
+                                      minWidth: 10,
+                                      minHeight: 25,
+                                    ),
+                                    contentPadding: EdgeInsets.only(
+                                        bottom: 0, right: 0, left: 5, top: 0),
+                                    hintText: 'Enter Amount',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              )),
+                          // Expanded(
+                          //   flex: 1,
+                          //   child: IconButton(
+                          //       onPressed: () async {},
+                          //       iconSize: 32,
+                          //       color: Colors.blue[800],
+                          //       icon: Icon(
+                          //           Icons.contacts)),
+                          // ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 10,
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(child: Icon(Icons.sticky_note_2)),
+                          Expanded(
+                              flex: 4,
+                              child: SizedBox(
+                                height: 40,
+                                child: TextField(
+                                  minLines: null,
+                                  textInputAction: TextInputAction.newline,
+                                  keyboardType: TextInputType.multiline,
+                                  maxLines: null,
+                                  expands: true,
+                                  // maxLength: 50,
+                                  controller: remarkController,
+                                  textAlign: TextAlign.center,
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.only(
+                                        bottom: 0, right: 0, left: 5, top: 0),
+                                    hintText: 'Remark (अधिक माहिती)',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
+                              )),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          TextButton(
+                              onPressed: () async {
+                                DateTime? dateTime =
+                                    await showOmniDateTimePicker(
+                                  context: context,
+                                  primaryColor: Colors.cyan,
+                                  backgroundColor: Colors.blue,
+                                  calendarTextColor: Colors.white,
+                                  tabTextColor: Colors.white,
+                                  unselectedTabBackgroundColor:
+                                      Colors.grey[700],
+                                  buttonTextColor: Colors.white,
+                                  timeSpinnerTextStyle: const TextStyle(
+                                      color: Colors.white70, fontSize: 18),
+                                  timeSpinnerHighlightedTextStyle:
+                                      const TextStyle(
+                                          color: Colors.white, fontSize: 24),
+                                  is24HourMode: false,
+                                  isShowSeconds: false,
+                                  startInitialDate: date,
+                                  startFirstDate: DateTime(2020)
+                                      .subtract(const Duration(days: 3652)),
+                                  startLastDate: DateTime.now().add(
+                                    const Duration(days: 3652),
+                                  ),
+                                  borderRadius: const Radius.circular(16),
+                                );
+                                setState(() {
+                                  dateTime != null
+                                      ? date = dateTime
+                                      : date = DateTime.now();
+                                });
+
+                                // print(
+                                //     DateFormat('EEEE').format(dateTime!).toString());
+                                // // print(weeks['Saturday']);
+                                // print(weeks[
+                                //     DateFormat('EEEE').format(dateTime).toString()]);
+                                // weeks.forEach((e) => print(e[DateFormat('EEEE')
+                                //     .format(dateTime!)
+                                //     .toString()]));
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    dateFormat.format(date),
+                                    style: const TextStyle(color: Colors.blue),
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  const Icon(
+                                    Icons.edit,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  Text(DateFormat.jm().format(date).toString()),
+                                  const SizedBox(
+                                    width: 5,
+                                  ),
+                                  const Icon(
+                                    Icons.edit,
+                                    size: 18,
+                                  ),
+                                ],
+                              )),
+                          Expanded(
+                            flex: 1,
+                            child: IconButton(
+                              padding: EdgeInsets.all(0),
+                              onPressed: () async {
+                                print(((int.parse(amountController.text) -
+                                        amount) +
+                                    closingBalance) as int);
+                                print(closingBalance);
+                                database.updateCreditDebitAccount(
+                                    number: widget.data['number'],
+                                    name: widget.data['name'],
+                                    currentUid: widget.currentUid,
+                                    dateTime: date,
+                                    closebalance:
+                                        ((int.parse(amountController.text) -
+                                                amount) +
+                                            closingBalance) as int,
+                                    amount: minus
+                                        ? -int.parse(amountController.text)
+                                        : int.parse(amountController.text),
+                                    remark: remarkController.text,
+                                    type: type,
+                                    docuid: docuid);
+                                // await database
+                                //     .createCreditDebitAccount(
+                                //         number: widget.data['number'],
+                                //         name: widget.data['name'],
+                                //         currentUid: widget.currentUid,
+                                //         dateTime: date,
+                                //         closebalance: minus
+                                //             ? -int.parse(
+                                //                     amountController.text) +
+                                //                 int.parse(sum.toString())
+                                //             : int.parse(amountController.text) +
+                                //                 int.parse(sum.toString()),
+                                //         amount: minus
+                                //             ? -int.parse(amountController.text)
+                                //             : int.parse(amountController.text),
+                                //         remark: remarkController.text,
+                                //         type: type)
+                                //     .whenComplete(() {
+                                //   amountController.clear();
+                                //   remarkController.clear();
+                                //   Navigator.pop(context);
+                                // });
+                              },
+                              iconSize: 30,
+                              color: Colors.green[800],
+                              icon: Icon(Icons.check_box),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+  }
+
   getTitleText(String title) => Text(
         title,
         style: TextStyle(
@@ -620,7 +875,7 @@ class _UdharPageState extends ConsumerState<UdharPage> {
         backGroundColor: Colors.grey[50],
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.7,
+            maxWidth: MediaQuery.of(context).size.width * 0.8,
           ),
           // width: 100,
           child: Row(
@@ -635,7 +890,7 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                       ? Text(remark, style: TextStyle(color: Colors.black))
                       : Container(),
                   SizedBox(
-                    height: 5,
+                    height: 2,
                   ),
                   Text(
                     "₹${numberFormat.format(Amount)}",
@@ -646,7 +901,13 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                   ),
                   Text(
                     "Cls BL: ₹${numberFormat.format(closingBalance)}",
-                    style: TextStyle(color: Colors.green, fontSize: 10),
+                    style: TextStyle(
+                        color: (closingBalance == 0)
+                            ? Colors.black
+                            : (closingBalance.toString().contains("-"))
+                                ? Colors.red[900]
+                                : Colors.green,
+                        fontSize: 10),
                   ),
                   Row(
                     children: [
@@ -684,15 +945,25 @@ class _UdharPageState extends ConsumerState<UdharPage> {
         ),
       );
 
-  getReceiverView(CustomClipper clipper, BuildContext context, int Amount,
-          String remark, int closingBalance, DateTime date) =>
+  getReceiverView(
+          {required CustomClipper clipper,
+          required BuildContext context,
+          required int Amount,
+          required String remark,
+          required int closingBalance,
+          required DateTime date,
+          required String indexuid,
+          required Database database,
+          required String type,
+          required String name,
+          required String number}) =>
       ChatBubble(
         clipper: clipper,
         backGroundColor: Color(0xffE7E7ED),
         margin: EdgeInsets.only(top: 10),
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.7,
+            maxWidth: MediaQuery.of(context).size.width * 0.8,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -703,8 +974,15 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   (remark != "")
-                      ? Text(remark, style: TextStyle(color: Colors.black))
+                      ? Text(
+                          remark,
+                          style: TextStyle(color: Colors.black),
+                          maxLines: 4,
+                        )
                       : Container(),
+                  SizedBox(
+                    height: 2,
+                  ),
                   Text(
                     "₹${numberFormat.format(Amount)}",
                     style: TextStyle(color: Colors.green),
@@ -714,7 +992,13 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                   ),
                   Text(
                     "Cls BL: ₹${numberFormat.format(closingBalance)}",
-                    style: TextStyle(color: Colors.green, fontSize: 10),
+                    style: TextStyle(
+                        color: (closingBalance == 0)
+                            ? Colors.black
+                            : (closingBalance.toString().contains("-"))
+                                ? Colors.red[900]
+                                : Colors.green,
+                        fontSize: 10),
                   ),
                   Row(
                     children: [
@@ -739,16 +1023,151 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                   ),
                 ],
               ),
-              IconButton(
-                constraints: BoxConstraints(maxWidth: 20),
-                onPressed: () {},
-                icon: Icon(
-                  Icons.more_vert,
-                ),
-                padding: EdgeInsets.all(0),
-              )
+              // IconButton(
+              //   constraints: BoxConstraints(maxWidth: 20),
+              //   onPressed: () {},
+              //   icon: Icon(
+              //     Icons.more_vert,
+              //   ),
+              //   padding: EdgeInsets.all(0),
+              // ),
+              popupMenu(
+                  amount: Amount,
+                  currentUid: indexuid,
+                  database: database,
+                  closebalance: closingBalance,
+                  dateTime: date,
+                  remark: remark,
+                  type: type,
+                  name: name,
+                  number: number,
+                  indexuid: indexuid),
             ],
           ),
         ),
       );
+  PopupMenuButton<Menu> popupMenu(
+      {required Database database,
+      number,
+      required String currentUid,
+      required String type,
+      required int amount,
+      required String remark,
+      required int closebalance,
+      required String name,
+      required DateTime dateTime,
+      required indexuid}) {
+    return PopupMenuButton<Menu>(
+        padding: const EdgeInsets.all(0),
+        icon: const Icon(
+          Icons.more_vert,
+          color: Colors.black,
+        ),
+        // Callback that sets the selected popup menu item.
+        // onSelected: (Menu item) {
+        //   setState(() {
+        //     _selectedMenu = item.name;
+        //   });
+        //   print("Selected menu ${item.name}");
+        // },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<Menu>>[
+              PopupMenuItem<Menu>(
+                value: Menu.atoz,
+                onTap: () async {
+                  amountController.text = amount.toString();
+                  remarkController.text = remark;
+                  date = dateTime;
+                  Future.delayed(Duration(milliseconds: 500), () async {
+                    await updatecreditndDebitDialog(
+                        context,
+                        database,
+                        "Credit Receive",
+                        false,
+                        "credit",
+                        indexuid,
+                        closebalance,
+                        amount);
+                  });
+                },
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.edit,
+                      color: Colors.blue,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Edit Entry'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.debit,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.remove_circle,
+                      color: Colors.red,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Share Entry'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                onTap: () async {
+                  Future.delayed(Duration(milliseconds: 500), () async {
+                    await database.deleteCreditDebitAccount(
+                        currentUid: widget.currentUid, docuid: indexuid);
+                  });
+                },
+                value: Menu.credit,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Delete Entry'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.time,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.sync,
+                      color: Colors.cyan,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('Convert to Debit'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<Menu>(
+                value: Menu.time,
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.picture_as_pdf,
+                      color: Colors.deepOrange,
+                    ),
+                    SizedBox(
+                      width: 10,
+                    ),
+                    Text('PDF Invoice Receipt'),
+                  ],
+                ),
+              ),
+            ]);
+  }
 }
