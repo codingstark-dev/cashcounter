@@ -7,11 +7,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:uuid/uuid.dart';
 
+enum Menu { atoz, debit, credit, time }
+
 class Database {
   var uuid = const Uuid();
   num sum = 0;
-  FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Create an instance of Firebase Firestore.
   late CollectionReference
@@ -23,11 +25,38 @@ class Database {
       .snapshots(); // a stream that is continuously listening for changes happening in the database
   Stream<DocumentSnapshot<Map<String, dynamic>>> get getUserDetail =>
       _firestore.collection("users").doc(_auth.currentUser?.uid).snapshots();
-  Stream<QuerySnapshot<Map<String, dynamic>>> get udharDetail => _firestore
-      .collection("users")
-      .doc(_auth.currentUser?.uid)
-      .collection("udhar")
-      .snapshots();
+  Stream<QuerySnapshot<Map<String, dynamic>>> udharDetail(
+      String selectedMenu) async* {
+    if (selectedMenu == Menu.time.name) {
+      yield* _firestore
+          .collection("users")
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .orderBy("date", descending: true)
+          .snapshots();
+    } else if (selectedMenu == Menu.atoz.name) {
+      yield* _firestore
+          .collection("users")
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .orderBy("name")
+          .snapshots();
+    } else if (selectedMenu == Menu.debit.name) {
+      yield* _firestore
+          .collection("users")
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .orderBy("debit", descending: false)
+          .snapshots();
+    } else if (selectedMenu == Menu.credit.name) {
+      yield* _firestore
+          .collection("users")
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .orderBy("credit", descending: true)
+          .snapshots();
+    }
+  }
 
   //create setter for  reference
   Stream<QuerySnapshot<Map<String, dynamic>>> creditndDebita(
@@ -39,7 +68,8 @@ class Database {
         .doc(uid)
         .collection("creditanddebit")
         .where('date',
-            isLessThanOrEqualTo: DateTime.now().add(Duration(days: 10000)))
+            isLessThanOrEqualTo:
+                DateTime.now().add(const Duration(days: 10000)))
         .snapshots();
   }
 
@@ -231,6 +261,68 @@ class Database {
       return Future.error(e); // return error
     }
   }
+
+  //updateCreditDebitAccount for user
+  Future updateCreditDebitAccount(
+      {required String number,
+      required String name,
+      required String? currentUid,
+      required DateTime dateTime,
+      required int closebalance,
+      required int amount,
+      required String remark,
+      required String type,
+      required String docuid}) async {
+    var v1 = uuid.v1();
+    var udhar = _firestore.collection('users');
+
+    try {
+      await udhar
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .doc(currentUid)
+          .collection("creditanddebit")
+          .doc(docuid)
+          .update({
+        "credit": 0,
+        "debit": 0,
+        "date": dateTime,
+        "closebalance": closebalance,
+        "name": name,
+        "number": number,
+        "amount": amount,
+        "remark": remark,
+        "type": type,
+        "useruid": _auth.currentUser?.uid,
+        "uuid": v1
+      });
+      Fluttertoast.showToast(msg: "Credit/Debit Account Updated");
+    } catch (e) {
+      print(e);
+      return Future.error(e); // return error
+    }
+  }
+
+  // delete updateCreditDebitAccount for user
+  Future deleteCreditDebitAccount(
+      {required String? currentUid, required String docuid}) async {
+    var udhar = _firestore.collection('users');
+
+    try {
+      await udhar
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .doc(currentUid)
+          .collection("creditanddebit")
+          .doc(docuid)
+          .delete();
+      Fluttertoast.showToast(msg: "Credit/Debit Account Deleted");
+    } catch (e) {
+      print(e);
+      return Future.error(e); // return error
+    }
+  }
+
 // create firebase auth otp
 
   // Update a Movie
