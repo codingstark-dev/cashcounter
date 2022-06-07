@@ -71,24 +71,36 @@ class _UdharPageState extends ConsumerState<UdharPage> {
           });
         }
       }
-      if (await ref
+      var d = ref
           .read(databaseProvider)
-          .checkDrCrBalance(widget.currentUid, cr, dr)) {
-        _firestore
-            .collection("users")
-            .doc(_auth.currentUser?.uid)
-            .collection("udhar")
-            .doc(widget.currentUid)
-            .update({
-          "credit": cr,
-          "debit": dr,
-          "closebalance": sum,
-        });
-      }
+          .checkDrCrBalance(widget.currentUid, cr, dr);
+      d.then((value) => {
+            if (value)
+              {
+                _firestore
+                    .collection("users")
+                    .doc(_auth.currentUser?.uid)
+                    .collection("udhar")
+                    .doc(widget.currentUid)
+                    .update({
+                  "credit": cr,
+                  "debit": dr,
+                  "closebalance": sum,
+                })
+              }
+          });
+
       // print(await ref
       //     .read(databaseProvider)
       //     .checkDrCrBalance(widget.currentUid, cr, dr));
     });
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+    _scrollController.dispose();
   }
 
   @override
@@ -1139,6 +1151,16 @@ class _UdharPageState extends ConsumerState<UdharPage> {
                 ),
               ),
               PopupMenuItem<Menu>(
+                onTap: () {
+                  Future.delayed(Duration(milliseconds: 500), () async {
+                    await database.convertDebitToCredit(
+                        currentUid: widget.currentUid,
+                        docuid: indexuid,
+                        type: "debit",
+                        amount: amount,
+                        closebalance: closebalance);
+                  });
+                },
                 value: Menu.time,
                 child: Row(
                   children: const [

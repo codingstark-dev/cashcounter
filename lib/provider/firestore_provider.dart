@@ -323,6 +323,34 @@ class Database {
     }
   }
 
+  //convert debit to credit and vice versa
+  Future convertDebitToCredit(
+      {required String? currentUid,
+      required String docuid,
+      required String type,
+      required int amount,
+      required int closebalance}) async {
+    var udhar = _firestore.collection('users');
+
+    try {
+      await udhar
+          .doc(_auth.currentUser?.uid)
+          .collection("udhar")
+          .doc(currentUid)
+          .collection("creditanddebit")
+          .doc(docuid)
+          .update({
+        "type": type,
+        "amount": type == "debit" ? -amount : amount.abs(),
+        "closebalance": type == "debit" ? -closebalance : closebalance.abs()
+      });
+      Fluttertoast.showToast(msg: "Debit to Credit");
+    } catch (e) {
+      print(e);
+      return Future.error(e); // return error
+    }
+  }
+
 // create firebase auth otp
 
   // Update a Movie
@@ -359,3 +387,4 @@ class Database {
 
 // Creating a simple Riverpod provider that provides an instance of our Database class so that it can be used from our UI(by calling Database class methods)
 final databaseProvider = Provider((ref) => Database());
+//create dispose of provider to avoid memory leaks
